@@ -36,4 +36,11 @@ describe("loadConfig", () => {
     expect(cfg.mockEnabled).toBe(true);
     expect(cfg.port).toBe(8137);
   });
+
+  it("treats blank env values as unset (regression: MEDIA_MAX_BYTES= must not coerce to 0)", () => {
+    const cfg = loadConfig({ ...base, PORT: "", MEDIA_MAX_BYTES: "", LOG_LEVEL: "" });
+    expect(cfg.port).toBe(8137);
+    expect(cfg.mediaMaxBytes).toBe(15 * 1024 * 1024);
+    expect(cfg.logLevel).toBe("info");
+  });
 });
