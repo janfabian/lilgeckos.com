@@ -1,0 +1,30 @@
+{
+  "name": "lilgeckos-hub",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Social broadcast hub — fan a post out across social platforms.",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.13.7",
+    "@hono/zod-validator": "^0.4.1",
+    "dotenv": "^16.4.5",
+    "hono": "^4.6.13",
+    "pino": "^9.5.0",
+    "twitter-api-v2": "^1.29.0",
+    "zod": "^3.23.8"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.1",
+    "pino-pretty": "^13.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.2",
+    "vitest": "^2.1.8"
+  }
+}
