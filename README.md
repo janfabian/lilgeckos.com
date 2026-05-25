@@ -50,6 +50,30 @@ Open the printed URL **while logged in as the account you want to post as**, aut
 the PIN. The script prints `TWITTER_ACCESS_TOKEN` / `TWITTER_ACCESS_SECRET` for that account —
 put them in `.env`. Leave the API Key/Secret as the app's consumer keys.
 
+## Level-2 subscriber (hands-free WhatsApp → post)
+
+`src/subscriber/` is a standalone daemon that turns WhatsApp messages into posts
+with no Claude Code session in the loop:
+
+```
+bridge WS → parse via `claude -p` (your subscription) → propose draft in WhatsApp → "go" → POST /publish
+```
+
+- **LLM parse** uses the `claude` CLI in headless mode, billed to your Claude
+  subscription via `CLAUDE_CODE_OAUTH_TOKEN` (from `claude setup-token`). Keep
+  `ANTHROPIC_API_KEY` unset or it bills API credits instead.
+- **Routing**: the LLM picks targets the message names; if none are named, it
+  fans out to all enabled platforms.
+- **Propose-then-confirm**: the subscriber replies with the parsed draft and
+  publishes only after you reply `go` (`no` cancels).
+
+Run it (hub must be running first):
+```bash
+claude setup-token                       # once: prints the OAuth token
+# put CLAUDE_CODE_OAUTH_TOKEN + SUBSCRIBER_CHATS in .env (HUB_TOKEN already set)
+bun run subscriber
+```
+
 ## Media file lifecycle
 
 Callers pass **absolute local file paths** for media. The hub reads but **never deletes** those
