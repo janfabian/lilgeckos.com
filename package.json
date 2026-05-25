@@ -10,6 +10,7 @@
     "auth:x": "tsx scripts/x-auth.ts",
     "whoami:x": "tsx scripts/x-whoami.ts",
     "subscriber": "tsx src/subscriber/index.ts",
+    "blog:admin": "tsx scripts/blog-admin.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
