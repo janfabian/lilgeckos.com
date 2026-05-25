@@ -1,0 +1,10 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL;
+---
+
+<BaseLayout title="lilgeckos.com" description="Little geckos, big internet.">
+  <h1>lilgeckos.com</h1>
+  <p>Placeholder home page. The real design lands soon.</p>
+  <p><a href={`${base}/blog`}>Read the blog &rarr;</a></p>
+</BaseLayout>
