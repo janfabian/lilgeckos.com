@@ -22,6 +22,16 @@ export const envSchema = z.object({
   FACEBOOK_PAGE_ID: z.preprocess(blankToUndef, z.string().optional()),
   FACEBOOK_PAGE_ACCESS_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   FACEBOOK_GRAPH_VERSION: z.preprocess(blankToUndef, z.string().default("v21.0")),
+  // Blog adapter — publishes markdown posts to the Astro site (site/) via the
+  // GitHub Contents API. Enabled when both token and repo are present.
+  BLOG_GITHUB_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
+  BLOG_REPO: z.preprocess(blankToUndef, z.string().optional()),
+  BLOG_BRANCH: z.preprocess(blankToUndef, z.string().default("main")),
+  BLOG_CONTENT_DIR: z.preprocess(blankToUndef, z.string().default("site/src/content/blog")),
+  BLOG_SITE_URL: z.preprocess(
+    blankToUndef,
+    z.string().default("https://janfabian.github.io/lilgeckos.com"),
+  ),
   MOCK_ENABLED: z
     .string()
     .optional()
@@ -57,10 +67,25 @@ export interface AppConfig {
   twitter?: TwitterCredentials;
   /** Present only when both Facebook page id + token are set. */
   facebook?: FacebookCredentials;
+  /** Present only when both BLOG_GITHUB_TOKEN and BLOG_REPO are set. */
+  blog?: BlogConfig;
 }
 
 export interface FacebookCredentials {
   pageId: string;
   pageAccessToken: string;
   graphVersion: string;
+}
+
+export interface BlogConfig {
+  /** Fine-grained PAT scoped to the blog repo with Contents: write. */
+  token: string;
+  /** "owner/name", e.g. "janfabian/lilgeckos.com". */
+  repo: string;
+  /** Branch to commit posts to (triggers the Pages deploy). */
+  branch: string;
+  /** Repo-relative dir for post markdown, e.g. "site/src/content/blog". */
+  contentDir: string;
+  /** Public site origin (+ base path) used to build post permalinks. */
+  siteUrl: string;
 }

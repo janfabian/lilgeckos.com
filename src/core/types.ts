@@ -1,6 +1,6 @@
 // Domain model for the broadcast hub. Platform adapters depend only on these types.
 
-export type PlatformId = "twitter" | "facebook" | "instagram" | "youtube" | "mock";
+export type PlatformId = "twitter" | "facebook" | "instagram" | "youtube" | "blog" | "mock";
 
 export type MediaKind = "image" | "video";
 
@@ -15,6 +15,12 @@ export interface MediaItem {
 }
 
 export interface Post {
+  /**
+   * Optional title. Used by the blog adapter as the post title; platforms that
+   * have no title concept (X) ignore it. When absent, the blog adapter derives
+   * a title from the first line of `text`.
+   */
+  title?: string;
   /** Main body text. For X, links live inside this text. */
   text: string;
   /** Optional media. X (increment 1): up to 4 images. Video is rejected until increment 1.5. */
