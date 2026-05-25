@@ -1,10 +1,15 @@
+import { readFileSync } from "node:fs";
+import { basename, extname } from "node:path";
 import type { Publisher } from "../core/publisher.js";
-import type { Post, PublishResult, PlatformStatus, ErrorCode } from "../core/types.js";
+import type { Post, PublishResult, PlatformStatus, ErrorCode, MediaItem } from "../core/types.js";
 import type { BlogConfig } from "../config/env.js";
+import { validateMedia } from "../core/media.js";
 
 const GITHUB_API = "https://api.github.com";
 const MAX_TITLE_LEN = 100;
 const MAX_SLUG_LEN = 60;
+// GitHub Contents API is fine for modest files; keep blog media well under its limit.
+const MAX_BLOG_MEDIA_BYTES = 25 * 1024 * 1024;
 
 /** The slice of the GitHub Contents API we use. Lets tests inject a fake. */
 export interface BlogClientLike {
@@ -33,9 +38,11 @@ export interface BlogDeps {
  * Publishes a post as a markdown file in the Astro blog (site/src/content/blog)
  * via the GitHub Contents API. The commit triggers the Pages deploy workflow.
  *
- * v1 is text-only: media is not embedded yet (a follow-up will upload images
- * into site/public/ and reference them). A post with media still publishes its
- * text so the blog never fails a default fan-out just because images came along.
+ * Media: each image/video is uploaded into the site's public dir
+ * (site/public/blog-media/<id>/) and embedded in the post markdown by absolute
+ * URL (images via ![], video via a <video> tag), which avoids Astro base-path
+ * quirks. Each upload + the post are separate Contents API commits on the
+ * branch; the final commit triggers the Pages deploy.
  */
 export class BlogPublisher implements Publisher {
   readonly platform = "blog" as const;
@@ -62,19 +69,47 @@ export class BlogPublisher implements Publisher {
 
     const now = this.now();
     const { title, body } = splitTitleBody(post, now);
-    const markdown = renderMarkdown({ title, body: appendLink(body, post.link), date: now });
-
     const slug = slugify(title) || "post";
     const id = `${dateStamp(now)}-${slug}`;
-    const fileName = `${id}.md`;
-    const path = `${this.config.contentDir.replace(/\/+$/, "")}/${fileName}`;
+
+    const media = post.media ?? [];
+    // Validate media up front (no network): exists + within size cap.
+    for (const item of media) {
+      const v = validateMedia(item, MAX_BLOG_MEDIA_BYTES);
+      if (!v.ok) return fail("validation", v.reason);
+    }
+
+    const siteUrl = this.config.siteUrl.replace(/\/+$/, "");
+    const mediaDir = mediaDirFor(this.config.contentDir, id); // e.g. site/public/blog-media/<id>
+    const branch = this.config.branch;
 
     try {
+      // 1) Upload each media file into the site's public dir, collect markdown embeds.
+      const embeds: string[] = [];
+      for (let i = 0; i < media.length; i++) {
+        const item = media[i]!;
+        const fileName = mediaFileName(item, i);
+        await this.client.createFile({
+          path: `${mediaDir}/${fileName}`,
+          contentBase64: readFileSync(item.path).toString("base64"),
+          message: `blog media: ${title}`.slice(0, 100),
+          branch,
+        });
+        const publicUrl = `${siteUrl}/blog-media/${id}/${fileName}`;
+        embeds.push(embedFor(item, publicUrl, title));
+      }
+
+      // 2) Write the post markdown (media embeds first, then body + link).
+      const fullBody = [embeds.join("\n\n"), appendLink(body, post.link)]
+        .filter((s) => s.length > 0)
+        .join("\n\n");
+      const markdown = renderMarkdown({ title, body: fullBody, date: now });
+      const path = `${this.config.contentDir.replace(/\/+$/, "")}/${id}.md`;
       await this.client.createFile({
         path,
         contentBase64: Buffer.from(markdown, "utf8").toString("base64"),
         message: `blog: ${title}`.slice(0, 100),
-        branch: this.config.branch,
+        branch,
       });
       return {
         platform: this.platform,
@@ -188,6 +223,28 @@ export function slugify(s: string): string {
 
 function dateStamp(d: Date): string {
   return d.toISOString().slice(0, 10); // YYYY-MM-DD
+}
+
+/** Repo-relative public dir for a post's media, derived from the content dir. */
+export function mediaDirFor(contentDir: string, id: string): string {
+  const siteRoot = contentDir.split("/src/")[0] || "site";
+  return `${siteRoot}/public/blog-media/${id}`;
+}
+
+/** Safe, ordered filename for an uploaded media item. */
+export function mediaFileName(item: MediaItem, index: number): string {
+  const raw = basename(item.path).toLowerCase().replace(/[^a-z0-9._-]+/g, "-").replace(/^-+/, "");
+  const safe = raw || `media${extname(item.path) || ""}`;
+  return `${String(index + 1).padStart(2, "0")}-${safe}`;
+}
+
+/** Markdown/HTML embed for a media item referenced by its published URL. */
+export function embedFor(item: MediaItem, url: string, title: string): string {
+  if (item.kind === "video") {
+    return `<video controls playsinline style="max-width:100%" src="${url}"></video>`;
+  }
+  const alt = (item.altText ?? title).replace(/[[\]]/g, "");
+  return `![${alt}](${url})`;
 }
 
 /** Map a GitHub API error (or anything) to our ErrorCode without throwing. */

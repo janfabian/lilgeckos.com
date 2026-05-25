@@ -1,4 +1,7 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeAll, afterAll } from "vitest";
+import { writeFileSync, rmSync } from "node:fs";
+import { join } from "node:path";
+import { tmpdir } from "node:os";
 import {
   BlogPublisher,
   splitTitleBody,
@@ -97,6 +100,64 @@ describe("BlogPublisher.publish", () => {
     });
     const res = await adapter(client).publish({ title: "x", text: "y" });
     expect(res).toMatchObject({ ok: false, errorCode: "validation" });
+  });
+});
+
+describe("BlogPublisher media", () => {
+  const img = join(tmpdir(), `hub-blog-img-${process.pid}.jpg`);
+  const vid = join(tmpdir(), `hub-blog-vid-${process.pid}.mp4`);
+  beforeAll(() => {
+    writeFileSync(img, Buffer.alloc(128));
+    writeFileSync(vid, Buffer.alloc(256));
+  });
+  afterAll(() => {
+    rmSync(img, { force: true });
+    rmSync(vid, { force: true });
+  });
+
+  it("uploads an image and embeds it by absolute URL", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      title: "Photo Post",
+      text: "look at this",
+      media: [{ path: img, kind: "image", altText: "a gecko" }],
+    });
+    expect(res.ok).toBe(true);
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2); // media + markdown
+    expect(calls[0]![0].path).toBe("site/public/blog-media/2026-05-25-photo-post/01-hub-blog-img-" + process.pid + ".jpg");
+    const md = Buffer.from(calls[1]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain(
+      "![a gecko](https://janfabian.github.io/lilgeckos.com/blog-media/2026-05-25-photo-post/01-hub-blog-img-" +
+        process.pid +
+        ".jpg)",
+    );
+    expect(md).toContain("look at this");
+  });
+
+  it("uploads a video and embeds a <video> tag", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      title: "Clip Post",
+      text: "yum",
+      media: [{ path: vid, kind: "video" }],
+    });
+    expect(res.ok).toBe(true);
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    const md = Buffer.from(calls[1]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain("<video controls");
+    expect(md).toContain("/blog-media/2026-05-25-clip-post/01-hub-blog-vid-" + process.pid + ".mp4");
+  });
+
+  it("rejects a missing media file without any upload", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      title: "x",
+      text: "y",
+      media: [{ path: "/nope/missing.jpg", kind: "image" }],
+    });
+    expect(res).toMatchObject({ ok: false, errorCode: "validation" });
+    expect(client.createFile).not.toHaveBeenCalled();
   });
 });
 
