@@ -3,6 +3,7 @@ import {
   type AppConfig,
   type TwitterCredentials,
   type FacebookCredentials,
+  type BlogConfig,
 } from "./env.js";
 
 export class ConfigError extends Error {}
@@ -62,6 +63,21 @@ export function loadConfig(
     );
   }
 
+  let blog: BlogConfig | undefined;
+  if (e.BLOG_GITHUB_TOKEN && e.BLOG_REPO) {
+    blog = {
+      token: e.BLOG_GITHUB_TOKEN,
+      repo: e.BLOG_REPO,
+      branch: e.BLOG_BRANCH,
+      contentDir: e.BLOG_CONTENT_DIR,
+      siteUrl: e.BLOG_SITE_URL,
+    };
+  } else if (e.BLOG_GITHUB_TOKEN || e.BLOG_REPO) {
+    warn(
+      "whatsapp hub: partial blog credentials — adapter disabled until both BLOG_GITHUB_TOKEN and BLOG_REPO are set.",
+    );
+  }
+
   return {
     port: e.PORT,
     logLevel: e.LOG_LEVEL,
@@ -71,5 +87,6 @@ export function loadConfig(
     videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
     twitter,
     facebook,
+    blog,
   };
 }

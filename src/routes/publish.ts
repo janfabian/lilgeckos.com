@@ -6,7 +6,7 @@ import type { PlatformId } from "../core/types.js";
 import { publishToTargets, summarize } from "../core/orchestrator.js";
 import { enabledPlatforms } from "../core/registry.js";
 
-const platformEnum = z.enum(["twitter", "facebook", "instagram", "youtube", "mock"]);
+const platformEnum = z.enum(["twitter", "facebook", "instagram", "youtube", "blog", "mock"]);
 
 const mediaItemSchema = z.object({
   path: z.string().min(1),
@@ -18,6 +18,8 @@ const mediaItemSchema = z.object({
 const publishSchema = z.object({
   post: z
     .object({
+      // Optional blog post title; ignored by platforms without a title concept.
+      title: z.string().optional(),
       text: z.string().default(""),
       media: z.array(mediaItemSchema).optional(),
       link: z.string().url().optional(),

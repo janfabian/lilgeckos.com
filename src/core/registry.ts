@@ -3,6 +3,7 @@ import type { Publisher } from "./publisher.js";
 import type { PlatformId } from "./types.js";
 import { TwitterPublisher } from "../adapters/twitter.js";
 import { FacebookPublisher } from "../adapters/facebook.js";
+import { BlogPublisher } from "../adapters/blog.js";
 import { MockPublisher } from "../adapters/mock.js";
 
 /**
@@ -30,6 +31,9 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
         videoMaxBytes: config.videoMaxBytes,
       }),
     );
+  }
+  if (config.blog) {
+    registry.set("blog", new BlogPublisher(config.blog));
   }
   if (config.mockEnabled) {
     registry.set("mock", new MockPublisher());
