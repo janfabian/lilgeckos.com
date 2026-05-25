@@ -164,9 +164,26 @@ function composeText(post: Post): string {
 
 /** Map a twitter-api-v2 error (or anything) to our ErrorCode without throwing. */
 export function mapError(err: unknown): { errorCode: ErrorCode; message: string } {
-  const anyErr = err as { code?: unknown; rateLimitError?: unknown; message?: unknown };
-  const message =
+  const anyErr = err as {
+    code?: unknown;
+    rateLimitError?: unknown;
+    message?: unknown;
+    data?: { detail?: string; title?: string; errors?: Array<{ message?: string; detail?: string }> };
+  };
+  const base =
     typeof anyErr?.message === "string" ? anyErr.message : String(err ?? "unknown error");
+  // Surface X's actual error body (e.g. "Your client app is not configured with the
+  // appropriate oauth1 app permissions" or v2 access-tier 403 detail).
+  let detail = "";
+  const d = anyErr?.data;
+  if (d) {
+    if (typeof d.detail === "string") detail = d.detail;
+    else if (Array.isArray(d.errors) && d.errors.length)
+      detail = d.errors.map((e) => e.message ?? e.detail ?? JSON.stringify(e)).join("; ");
+    else if (typeof d.title === "string") detail = d.title;
+    else detail = JSON.stringify(d).slice(0, 300);
+  }
+  const message = detail ? `${base} — ${detail}` : base;
 
   if (anyErr?.rateLimitError === true) return { errorCode: "rate_limit", message };
 

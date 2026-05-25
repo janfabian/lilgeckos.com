@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "tsx src/index.ts",
     "auth:x": "tsx scripts/x-auth.ts",
+    "whoami:x": "tsx scripts/x-whoami.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
