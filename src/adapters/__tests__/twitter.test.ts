@@ -14,13 +14,16 @@ const creds: TwitterCredentials = {
 
 const imgA = join(tmpdir(), `hub-tw-a-${process.pid}.jpg`);
 const imgB = join(tmpdir(), `hub-tw-b-${process.pid}.jpg`);
+const vidA = join(tmpdir(), `hub-tw-v-${process.pid}.mp4`);
 beforeAll(() => {
   writeFileSync(imgA, Buffer.alloc(64));
   writeFileSync(imgB, Buffer.alloc(64));
+  writeFileSync(vidA, Buffer.alloc(2048));
 });
 afterAll(() => {
   rmSync(imgA, { force: true });
   rmSync(imgB, { force: true });
+  rmSync(vidA, { force: true });
 });
 
 function mockClient(over: Partial<TwitterClientLike["v2"]> = {}): TwitterClientLike {
@@ -81,13 +84,41 @@ describe("TwitterPublisher.publish", () => {
     expect(client.v2.uploadMedia).not.toHaveBeenCalled();
   });
 
-  it("rejects video as unsupported without calling the SDK", async () => {
+  it("posts a video: uploads with tweet_video category and attaches the id", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({ text: "clip", media: [{ path: vidA, kind: "video" }] });
+    expect(res.ok).toBe(true);
+    expect(client.v2.uploadMedia).toHaveBeenCalledTimes(1);
+    expect(client.v2.uploadMedia).toHaveBeenCalledWith(expect.any(Buffer), {
+      media_type: "video/mp4",
+      media_category: "tweet_video",
+    });
+    expect(client.v2.tweet).toHaveBeenCalledWith({ text: "clip", media: { media_ids: ["media-123"] } });
+  });
+
+  it("rejects mixing a video with images (no SDK call)", async () => {
     const client = mockClient();
     const res = await adapter(client).publish({
-      text: "clip",
-      media: [{ path: imgA, kind: "video" }],
+      text: "x",
+      media: [
+        { path: vidA, kind: "video" },
+        { path: imgA, kind: "image" },
+      ],
     });
-    expect(res).toMatchObject({ ok: false, errorCode: "unsupported" });
+    expect(res).toMatchObject({ ok: false, errorCode: "validation" });
+    expect(client.v2.uploadMedia).not.toHaveBeenCalled();
+  });
+
+  it("rejects more than one video (no SDK call)", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      text: "x",
+      media: [
+        { path: vidA, kind: "video" },
+        { path: vidA, kind: "video" },
+      ],
+    });
+    expect(res).toMatchObject({ ok: false, errorCode: "validation" });
     expect(client.v2.uploadMedia).not.toHaveBeenCalled();
   });
 

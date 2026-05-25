@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-const DEFAULT_MEDIA_MAX_BYTES = 15 * 1024 * 1024; // 15MB
+const DEFAULT_MEDIA_MAX_BYTES = 15 * 1024 * 1024; // 15MB (images)
+const DEFAULT_VIDEO_MAX_BYTES = 512 * 1024 * 1024; // 512MB (X video ceiling)
 
 // Empty env vars (e.g. `MEDIA_MAX_BYTES=` left blank in .env) arrive as "".
 // Treat "" as unset so .default()/optional behave; otherwise z.coerce turns
@@ -26,6 +27,10 @@ export const envSchema = z.object({
     blankToUndef,
     z.coerce.number().int().positive().default(DEFAULT_MEDIA_MAX_BYTES),
   ),
+  MEDIA_VIDEO_MAX_BYTES: z.preprocess(
+    blankToUndef,
+    z.coerce.number().int().positive().default(DEFAULT_VIDEO_MAX_BYTES),
+  ),
 });
 
 export type RawEnv = z.infer<typeof envSchema>;
@@ -44,6 +49,7 @@ export interface AppConfig {
   hubToken: string;
   mockEnabled: boolean;
   mediaMaxBytes: number;
+  videoMaxBytes: number;
   /** Present only when all four X credentials are set. */
   twitter?: TwitterCredentials;
 }

@@ -15,7 +15,10 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
   if (config.twitter) {
     registry.set(
       "twitter",
-      new TwitterPublisher(config.twitter, { mediaMaxBytes: config.mediaMaxBytes }),
+      new TwitterPublisher(config.twitter, {
+        mediaMaxBytes: config.mediaMaxBytes,
+        videoMaxBytes: config.videoMaxBytes,
+      }),
     );
   }
   if (config.mockEnabled) {

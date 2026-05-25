@@ -30,16 +30,20 @@ export interface TwitterClientLike {
 
 export interface TwitterDeps {
   client?: TwitterClientLike;
-  /** Max media bytes (from config). */
+  /** Max image bytes (from config). */
   mediaMaxBytes?: number;
+  /** Max video bytes (from config). */
+  videoMaxBytes?: number;
 }
 
 const DEFAULT_MAX_BYTES = 15 * 1024 * 1024;
+const DEFAULT_VIDEO_MAX_BYTES = 512 * 1024 * 1024;
 
 export class TwitterPublisher implements Publisher {
   readonly platform = "twitter" as const;
   private readonly client: TwitterClientLike;
   private readonly maxBytes: number;
+  private readonly videoMaxBytes: number;
 
   constructor(creds: TwitterCredentials, deps: TwitterDeps = {}) {
     this.client =
@@ -51,6 +55,7 @@ export class TwitterPublisher implements Publisher {
         accessSecret: creds.accessSecret,
       }) as unknown as TwitterClientLike);
     this.maxBytes = deps.mediaMaxBytes ?? DEFAULT_MAX_BYTES;
+    this.videoMaxBytes = deps.videoMaxBytes ?? DEFAULT_VIDEO_MAX_BYTES;
   }
 
   async publish(post: Post): Promise<PublishResult> {
@@ -64,29 +69,37 @@ export class TwitterPublisher implements Publisher {
     });
 
     const media = post.media ?? [];
+    const videos = media.filter((m) => m.kind === "video");
+    const images = media.filter((m) => m.kind === "image");
 
     // --- validation (no SDK call) ---
-    if (media.some((m) => m.kind === "video")) {
-      return fail("unsupported", "video posting to X is not supported until increment 1.5");
+    // X rules: 1 video OR up to 4 images, never mixed.
+    if (videos.length > 1) {
+      return fail("validation", `X allows at most 1 video, got ${videos.length}`);
     }
-    if (media.length > MAX_IMAGES) {
-      return fail("validation", `X allows at most ${MAX_IMAGES} images, got ${media.length}`);
+    if (videos.length === 1 && images.length > 0) {
+      return fail("validation", "X does not allow mixing a video with images");
+    }
+    if (images.length > MAX_IMAGES) {
+      return fail("validation", `X allows at most ${MAX_IMAGES} images, got ${images.length}`);
     }
     for (const item of media) {
-      const v = validateMedia(item, this.maxBytes);
+      const max = item.kind === "video" ? this.videoMaxBytes : this.maxBytes;
+      const v = validateMedia(item, max);
       if (!v.ok) return fail("validation", v.reason);
     }
 
     const text = composeText(post);
 
     // Upload phase — tag failures as media_upload (unless clearly auth/rate_limit).
+    // v2.uploadMedia handles chunked upload + processing-wait for video internally.
     const media_ids: string[] = [];
     for (const item of media) {
       try {
         const buf = readFileSync(item.path);
         const id = await this.client.v2.uploadMedia(buf, {
-          media_type: item.mimeType ?? mimeForPath(item.path),
-          media_category: "tweet_image",
+          media_type: item.mimeType ?? mimeFor(item),
+          media_category: item.kind === "video" ? "tweet_video" : "tweet_image",
         });
         media_ids.push(id);
       } catch (err) {
@@ -147,11 +160,14 @@ const MIME_BY_EXT: Record<string, string> = {
   ".png": "image/png",
   ".gif": "image/gif",
   ".webp": "image/webp",
+  ".mp4": "video/mp4",
+  ".m4v": "video/mp4",
+  ".mov": "video/quicktime",
 };
 
-/** Best-effort MIME from file extension; defaults to image/jpeg. */
-function mimeForPath(path: string): string {
-  return MIME_BY_EXT[extname(path).toLowerCase()] ?? "image/jpeg";
+/** Best-effort MIME from extension; falls back by media kind. */
+function mimeFor(item: MediaItem): string {
+  return MIME_BY_EXT[extname(item.path).toLowerCase()] ?? (item.kind === "video" ? "video/mp4" : "image/jpeg");
 }
 
 /** Append a link into the tweet body if present and not already there. */

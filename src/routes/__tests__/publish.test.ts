@@ -11,6 +11,7 @@ const config: AppConfig = {
   hubToken: "secret",
   mockEnabled: true,
   mediaMaxBytes: 1_000_000,
+  videoMaxBytes: 512_000_000,
 };
 
 function app(registry: Map<PlatformId, Publisher>) {

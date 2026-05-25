@@ -9,8 +9,8 @@ hub does not connect to WhatsApp itself.
 
 ## Status
 
-Increment 1 (in progress): hub skeleton + Twitter/X adapter for **text, text+image, and links**.
-Video, then Facebook / Instagram / YouTube, land in later increments.
+Twitter/X adapter supports **text, image (≤4), video (1), and links**. Facebook / Instagram /
+YouTube land in later increments.
 
 ## API
 

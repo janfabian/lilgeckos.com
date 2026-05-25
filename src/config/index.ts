@@ -50,6 +50,7 @@ export function loadConfig(
     hubToken: e.HUB_TOKEN,
     mockEnabled: e.MOCK_ENABLED ?? false,
     mediaMaxBytes: e.MEDIA_MAX_BYTES,
+    videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
     twitter,
   };
 }
