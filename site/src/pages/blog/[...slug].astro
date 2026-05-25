@@ -3,23 +3,64 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('blog', ({ data }) => !data.draft);
-  return posts.map((post) => ({
+  const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
+    (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
+  );
+  return posts.map((post, i) => ({
     params: { slug: post.id },
-    props: { post },
+    props: { post, newer: posts[i - 1] ?? null, older: posts[i + 1] ?? null },
   }));
 }
 
-const { post } = Astro.props;
+const { post, newer, older } = Astro.props;
 const { Content } = await render(post);
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
 ---
 
 <BaseLayout title={`${post.data.title} — lilgeckos.com`} description={post.data.description}>
-  <article>
-    <h1>{post.data.title}</h1>
-    <time datetime={post.data.pubDate.toISOString()}>
-      {post.data.pubDate.toLocaleDateString('en-US', { dateStyle: 'medium' })}
-    </time>
-    <Content />
+  <nav class="crumbs">
+    <a href={`${base}/blog`}>← All posts</a>
+    <span class="crumbs-meta">{post.id}</span>
+  </nav>
+
+  <article class="post post-solo">
+    <div class="post-head">
+      <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
+      <span class="kind">journal</span>
+    </div>
+    <h1 class="ttl">{post.data.title}</h1>
+    <div class="post-body">
+      <Content />
+    </div>
   </article>
+
+  {
+    (newer || older) && (
+      <nav class="adjacent">
+        <div class="side">
+          {newer ? (
+            <a href={`${base}/blog/${newer.id}`}>
+              <span class="dir">← newer</span>
+              <span class="ttl">{newer.data.title}</span>
+              <span class="d">{fmt(newer.data.pubDate)}</span>
+            </a>
+          ) : (
+            <span class="empty">— latest —</span>
+          )}
+        </div>
+        <div class="side r">
+          {older ? (
+            <a href={`${base}/blog/${older.id}`}>
+              <span class="dir">older →</span>
+              <span class="ttl">{older.data.title}</span>
+              <span class="d">{fmt(older.data.pubDate)}</span>
+            </a>
+          ) : (
+            <span class="empty">— first post —</span>
+          )}
+        </div>
+      </nav>
+    )
+  }
 </BaseLayout>

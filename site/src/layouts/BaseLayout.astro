@@ -1,13 +1,13 @@
 ---
-// Minimal placeholder layout. Real design lands later — keep markup lean
-// and unopinionated so the design can drop in cleanly.
+// Layout adapted from the Claude Design "lilgeckos — a journal" handoff:
+// single-channel cool-grey palette, Geist + Geist Mono, single-post-item chrome.
+// Single-column feed (the sidebar/search/lightbox from the mock are out of scope).
 interface Props {
   title: string;
   description?: string;
 }
 const { title, description } = Astro.props;
-// Strip any trailing slash so `${base}/path` yields exactly one slash whether
-// base is "/" (apex domain) or "/lilgeckos.com" (project pages).
+// Strip trailing slash so `${base}/path` yields one slash for "/" or "/lilgeckos.com".
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
 ---
 
@@ -17,21 +17,247 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href={`${base}/favicon.svg`} />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
     <title>{title}</title>
     {description && <meta name="description" content={description} />}
+    <style is:global>
+      :root {
+        --bg: oklch(0.985 0.004 240);
+        --bg-soft: oklch(0.97 0.005 240);
+        --surface: #ffffff;
+        --ink: oklch(0.22 0.012 240);
+        --ink-soft: oklch(0.36 0.01 240);
+        --muted: oklch(0.55 0.008 240);
+        --faint: oklch(0.72 0.006 240);
+        --line: oklch(0.92 0.005 240);
+        --dot: oklch(0.55 0.1 75); /* warm leopard-amber, used very sparingly */
+        --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+        --font-mono: "Geist Mono", ui-monospace, "SFMono-Regular", Menlo, monospace;
+        --feed-w: 600px;
+      }
+      * { box-sizing: border-box; }
+      html, body { margin: 0; padding: 0; }
+      body {
+        background: var(--bg);
+        color: var(--ink);
+        font-family: var(--font-sans);
+        font-size: 16px;
+        line-height: 1.55;
+        font-feature-settings: "ss01", "cv11";
+        -webkit-font-smoothing: antialiased;
+        text-rendering: optimizeLegibility;
+      }
+      a { color: inherit; text-underline-offset: 3px; text-decoration-thickness: 1px; }
+      ::selection { background: oklch(0.85 0.02 240); color: var(--ink); }
+
+      .wrap {
+        max-width: var(--feed-w);
+        margin: 0 auto;
+        padding: 48px 20px 120px;
+      }
+
+      /* Masthead — wordmark links home (return to main) */
+      .masthead {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 22px;
+        margin-bottom: 40px;
+        border-bottom: 1px solid var(--line);
+      }
+      .wordmark {
+        font-weight: 600;
+        font-size: 17px;
+        letter-spacing: -0.01em;
+        color: var(--ink);
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 7px;
+      }
+      .wordmark .dot {
+        width: 7px; height: 7px;
+        border-radius: 999px;
+        background: var(--dot);
+        display: inline-block;
+      }
+      .wordmark small {
+        font-family: var(--font-mono);
+        font-weight: 400;
+        font-size: 11px;
+        color: var(--muted);
+      }
+      .masthead nav a {
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--ink-soft);
+        text-decoration: none;
+        letter-spacing: 0.02em;
+      }
+      .masthead nav a:hover { color: var(--ink); }
+
+      /* Feed + list */
+      .feed { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
+      .feed-head {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        padding-bottom: 18px;
+        border-bottom: 1px solid var(--line);
+      }
+      .feed-head h1 { margin: 0; font-size: 14px; font-weight: 500; letter-spacing: -0.005em; }
+      .feed-head .count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+      .post-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 30px; }
+      .post-list a.entry { display: flex; flex-direction: column; gap: 6px; text-decoration: none; }
+      .post-list .entry time {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+      }
+      .post-list .entry .ttl {
+        font-size: 19px;
+        font-weight: 600;
+        letter-spacing: -0.015em;
+        line-height: 1.25;
+        color: var(--ink);
+      }
+      .post-list a.entry:hover .ttl { text-decoration: underline; text-decoration-color: var(--faint); }
+      .post-list .entry .desc { font-size: 14px; color: var(--ink-soft); line-height: 1.55; }
+
+      /* Single post item chrome */
+      .post { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+      .post-head {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        color: var(--muted);
+        letter-spacing: 0.02em;
+      }
+      .post-head .kind { display: inline-flex; align-items: center; gap: 6px; color: var(--ink-soft); }
+      .post-head .kind::before {
+        content: ""; width: 4px; height: 4px; background: var(--faint);
+        border-radius: 1px; display: inline-block;
+      }
+      .post h1.ttl {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+        line-height: 1.2;
+        color: var(--ink);
+      }
+      .post-body { font-size: 16.5px; line-height: 1.65; color: var(--ink); }
+      .post-body p { margin: 0 0 0.9em; }
+      .post-body p:last-child { margin-bottom: 0; }
+      .post-body em { font-style: italic; color: var(--ink-soft); }
+      .post-body h2 { font-size: 20px; font-weight: 600; letter-spacing: -0.01em; margin: 1.4em 0 0.5em; }
+      .post-body h3 { font-size: 16px; font-weight: 600; margin: 1.3em 0 0.4em; }
+      .post-body ul { padding-left: 18px; }
+      .post-body a { text-decoration: underline; text-decoration-color: var(--faint); }
+      .post-body a:hover { text-decoration-color: var(--ink); }
+      .post-body code {
+        font-family: var(--font-mono); font-size: 0.88em;
+        background: var(--bg-soft); padding: 1px 5px; border-radius: 3px;
+      }
+      /* Media embedded in posts (blog adapter emits <img>/<video>) */
+      .post-body img,
+      .post-body video {
+        display: block;
+        width: 100%;
+        border-radius: 4px;
+        background: var(--bg-soft);
+        margin: 0.4em 0;
+      }
+
+      /* Crumbs — back to the feed (return to main) */
+      .crumbs {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 16px;
+        padding-bottom: 18px;
+        margin-bottom: 28px;
+        border-bottom: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+      }
+      .crumbs a { color: var(--ink-soft); text-decoration: none; transition: color 0.15s ease; }
+      .crumbs a:hover { color: var(--ink); }
+      .crumbs .crumbs-meta { color: var(--faint); }
+
+      /* Adjacent (prev/next) nav between posts */
+      .adjacent {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-top: 48px;
+        padding-top: 24px;
+        border-top: 1px solid var(--line);
+      }
+      .adjacent .side { display: flex; min-width: 0; }
+      .adjacent .side.r { justify-content: flex-end; text-align: right; }
+      .adjacent .side a {
+        display: flex; flex-direction: column; gap: 4px;
+        text-decoration: none; color: var(--ink-soft);
+        padding: 10px 14px; border-radius: 6px;
+        transition: background 0.15s ease, color 0.15s ease;
+        max-width: 100%; min-width: 0;
+      }
+      .adjacent .side a:hover { background: var(--bg-soft); color: var(--ink); }
+      .adjacent .dir {
+        font-family: var(--font-mono); font-size: 10.5px;
+        letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted);
+      }
+      .adjacent .ttl {
+        font-size: 14px; font-weight: 500; color: var(--ink);
+        overflow: hidden; text-overflow: ellipsis;
+        display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+      }
+      .adjacent .d { font-family: var(--font-mono); font-size: 10.5px; color: var(--faint); }
+      .adjacent .empty {
+        font-family: var(--font-mono); font-size: 11px; color: var(--faint);
+        padding: 10px 14px; align-self: center;
+      }
+
+      .footer {
+        margin-top: 80px;
+        padding-top: 28px;
+        border-top: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+      .footer a { color: var(--ink-soft); text-decoration: none; }
+      .footer a:hover { color: var(--ink); }
+    </style>
   </head>
   <body>
-    <header>
-      <a href={`${base}/`}>lilgeckos</a>
-      <nav>
-        <a href={`${base}/blog`}>Blog</a>
-      </nav>
-    </header>
-    <main>
+    <div class="wrap">
+      <header class="masthead">
+        <a class="wordmark" href={`${base}/`}>lilgeckos<span class="dot"></span><small>.com</small></a>
+        <nav><a href={`${base}/blog`}>journal</a></nav>
+      </header>
       <slot />
-    </main>
-    <footer>
-      <small>&copy; {new Date().getFullYear()} lilgeckos.com</small>
-    </footer>
+      <footer class="footer">
+        <span>© {new Date().getFullYear()} lilgeckos · est. 2026</span>
+        <span><a href={`${base}/blog`}>journal</a></span>
+      </footer>
+    </div>
   </body>
 </html>
