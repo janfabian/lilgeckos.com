@@ -115,7 +115,31 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
       .feed-head .count { font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
 
       .post-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 30px; }
-      .post-list a.entry { display: flex; flex-direction: column; gap: 6px; text-decoration: none; }
+      .post-list a.entry {
+        display: flex;
+        gap: 18px;
+        align-items: flex-start;
+        justify-content: space-between;
+        text-decoration: none;
+      }
+      .post-list .entry-main { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; }
+      .post-list .entry-thumb {
+        width: 92px; height: 92px;
+        flex-shrink: 0;
+        border-radius: 4px;
+        overflow: hidden;
+        background: var(--bg-soft);
+        position: relative;
+      }
+      .post-list .entry-thumb img,
+      .post-list .entry-thumb video { width: 100%; height: 100%; object-fit: cover; display: block; }
+      .post-list .entry-thumb .vbadge {
+        position: absolute; bottom: 5px; right: 5px;
+        width: 20px; height: 20px; border-radius: 999px;
+        background: rgba(14, 16, 20, 0.6);
+        display: flex; align-items: center; justify-content: center;
+      }
+      .post-list .entry-thumb .vbadge svg { width: 9px; height: 9px; color: #fff; margin-left: 1px; }
       .post-list .entry time {
         font-family: var(--font-mono);
         font-size: 11px;

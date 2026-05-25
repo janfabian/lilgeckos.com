@@ -1,0 +1,38 @@
+---
+import type { CollectionEntry } from 'astro:content';
+import { firstMedia } from '../lib/posts';
+
+interface Props {
+  post: CollectionEntry<'blog'>;
+  base: string;
+}
+const { post, base } = Astro.props;
+const media = firstMedia(post.body);
+const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
+---
+
+<li>
+  <a class="entry" href={`${base}/blog/${post.id}`}>
+    <div class="entry-main">
+      <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
+      <span class="ttl">{post.data.title}</span>
+      {post.data.description && <span class="desc">{post.data.description}</span>}
+    </div>
+    {
+      media && (
+        <div class="entry-thumb">
+          {media.kind === 'image' ? (
+            <img src={media.url} alt={media.alt} loading="lazy" />
+          ) : (
+            <>
+              <video src={media.url} muted playsinline preload="metadata" />
+              <span class="vbadge">
+                <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z" /></svg>
+              </span>
+            </>
+          )}
+        </div>
+      )
+    }
+  </a>
+</li>

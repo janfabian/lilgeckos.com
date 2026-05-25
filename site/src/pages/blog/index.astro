@@ -1,12 +1,12 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostEntry from '../../components/PostEntry.astro';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
   (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
 );
-const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
 ---
 
 <BaseLayout title="Journal — lilgeckos.com" description="Notes, photos and clips from lilgeckos.">
@@ -17,17 +17,7 @@ const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
     </div>
     {posts.length === 0 && <p class="crumbs-meta">No posts yet.</p>}
     <ul class="post-list">
-      {
-        posts.map((post) => (
-          <li>
-            <a class="entry" href={`${base}/blog/${post.id}`}>
-              <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
-              <span class="ttl">{post.data.title}</span>
-              {post.data.description && <span class="desc">{post.data.description}</span>}
-            </a>
-          </li>
-        ))
-      }
+      {posts.map((post) => <PostEntry post={post} base={base} />)}
     </ul>
   </section>
 </BaseLayout>
