@@ -93,6 +93,7 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         font-size: 11px;
         color: var(--muted);
       }
+      .masthead nav { display: inline-flex; gap: 16px; flex-shrink: 0; }
       .masthead nav a {
         font-family: var(--font-mono);
         font-size: 12px;
@@ -255,6 +256,38 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         padding: 10px 14px; align-self: center;
       }
 
+      /* Share row on single posts */
+      .share {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 18px;
+        margin-top: 40px;
+        padding-top: 22px;
+        border-top: 1px solid var(--line);
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        color: var(--muted);
+      }
+      .share .label { text-transform: uppercase; letter-spacing: 0.1em; font-size: 10px; color: var(--muted); }
+      .share a,
+      .share button {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--ink-soft);
+        text-decoration: none;
+        background: none;
+        border: 0;
+        font: inherit;
+        cursor: pointer;
+        padding: 2px 0;
+      }
+      .share a:hover,
+      .share button:hover { color: var(--ink); }
+      .share svg { width: 14px; height: 14px; }
+
       .footer {
         margin-top: 80px;
         padding-top: 28px;
@@ -275,12 +308,18 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
     <div class="wrap">
       <header class="masthead">
         <a class="wordmark" href={`${base}/`}>lilgeckos<span class="dot"></span><small>.com</small></a>
-        <nav><a href={`${base}/blog`}>journal</a></nav>
+        <nav>
+          <a href={`${base}/blog`}>journal</a>
+          <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">@lilgeckos</a>
+        </nav>
       </header>
       <slot />
       <footer class="footer">
         <span>© {new Date().getFullYear()} lilgeckos · est. 2026</span>
-        <span><a href={`${base}/blog`}>journal</a></span>
+        <span>
+          <a href={`${base}/blog`}>journal</a> ·
+          <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">x.com/lilgeckos</a>
+        </span>
       </footer>
     </div>
   </body>

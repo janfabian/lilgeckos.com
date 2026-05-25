@@ -1,6 +1,7 @@
 ---
 import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import ShareButtons from '../../components/ShareButtons.astro';
 
 export async function getStaticPaths() {
   const posts = (await getCollection('blog', ({ data }) => !data.draft)).sort(
@@ -16,6 +17,7 @@ const { post, newer, older } = Astro.props;
 const { Content } = await render(post);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
+const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://lilgeckos.com').href;
 ---
 
 <BaseLayout title={`${post.data.title} — lilgeckos.com`} description={post.data.description}>
@@ -33,6 +35,7 @@ const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
     <div class="post-body">
       <Content />
     </div>
+    <ShareButtons url={pageUrl} title={post.data.title} />
   </article>
 
   {
