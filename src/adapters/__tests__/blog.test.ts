@@ -149,6 +149,26 @@ describe("BlogPublisher media", () => {
     expect(md).toContain("/blog-media/2026-05-25-clip-post/01-hub-blog-vid-" + process.pid + ".mp4");
   });
 
+  it("embeds multiple mixed media (image + video) in order in one post", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      title: "Album",
+      text: "a few shots",
+      media: [
+        { path: img, kind: "image", altText: "shot 1" },
+        { path: vid, kind: "video" },
+      ],
+    });
+    expect(res.ok).toBe(true);
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(3); // 2 media uploads + 1 markdown
+    const md = Buffer.from(calls[2]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain("/blog-media/2026-05-25-album/01-");
+    expect(md).toContain("/blog-media/2026-05-25-album/02-");
+    expect(md).toContain("![shot 1]");
+    expect(md).toContain("<video controls");
+  });
+
   it("rejects a missing media file without any upload", async () => {
     const client = mockClient();
     const res = await adapter(client).publish({
