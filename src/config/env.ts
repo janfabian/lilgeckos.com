@@ -19,6 +19,9 @@ export const envSchema = z.object({
   TWITTER_API_SECRET: z.preprocess(blankToUndef, z.string().optional()),
   TWITTER_ACCESS_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   TWITTER_ACCESS_SECRET: z.preprocess(blankToUndef, z.string().optional()),
+  FACEBOOK_PAGE_ID: z.preprocess(blankToUndef, z.string().optional()),
+  FACEBOOK_PAGE_ACCESS_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
+  FACEBOOK_GRAPH_VERSION: z.preprocess(blankToUndef, z.string().default("v21.0")),
   MOCK_ENABLED: z
     .string()
     .optional()
@@ -52,4 +55,12 @@ export interface AppConfig {
   videoMaxBytes: number;
   /** Present only when all four X credentials are set. */
   twitter?: TwitterCredentials;
+  /** Present only when both Facebook page id + token are set. */
+  facebook?: FacebookCredentials;
+}
+
+export interface FacebookCredentials {
+  pageId: string;
+  pageAccessToken: string;
+  graphVersion: string;
 }

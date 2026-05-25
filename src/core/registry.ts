@@ -2,6 +2,7 @@ import type { AppConfig } from "../config/env.js";
 import type { Publisher } from "./publisher.js";
 import type { PlatformId } from "./types.js";
 import { TwitterPublisher } from "../adapters/twitter.js";
+import { FacebookPublisher } from "../adapters/facebook.js";
 import { MockPublisher } from "../adapters/mock.js";
 
 /**
@@ -16,6 +17,15 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
     registry.set(
       "twitter",
       new TwitterPublisher(config.twitter, {
+        mediaMaxBytes: config.mediaMaxBytes,
+        videoMaxBytes: config.videoMaxBytes,
+      }),
+    );
+  }
+  if (config.facebook) {
+    registry.set(
+      "facebook",
+      new FacebookPublisher(config.facebook, {
         mediaMaxBytes: config.mediaMaxBytes,
         videoMaxBytes: config.videoMaxBytes,
       }),

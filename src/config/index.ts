@@ -1,4 +1,9 @@
-import { envSchema, type AppConfig, type TwitterCredentials } from "./env.js";
+import {
+  envSchema,
+  type AppConfig,
+  type TwitterCredentials,
+  type FacebookCredentials,
+} from "./env.js";
 
 export class ConfigError extends Error {}
 
@@ -44,6 +49,19 @@ export function loadConfig(
     );
   }
 
+  let facebook: FacebookCredentials | undefined;
+  if (e.FACEBOOK_PAGE_ID && e.FACEBOOK_PAGE_ACCESS_TOKEN) {
+    facebook = {
+      pageId: e.FACEBOOK_PAGE_ID,
+      pageAccessToken: e.FACEBOOK_PAGE_ACCESS_TOKEN,
+      graphVersion: e.FACEBOOK_GRAPH_VERSION,
+    };
+  } else if (e.FACEBOOK_PAGE_ID || e.FACEBOOK_PAGE_ACCESS_TOKEN) {
+    warn(
+      "whatsapp hub: partial Facebook credentials — adapter disabled until both FACEBOOK_PAGE_ID and FACEBOOK_PAGE_ACCESS_TOKEN are set.",
+    );
+  }
+
   return {
     port: e.PORT,
     logLevel: e.LOG_LEVEL,
@@ -52,5 +70,6 @@ export function loadConfig(
     mediaMaxBytes: e.MEDIA_MAX_BYTES,
     videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
     twitter,
+    facebook,
   };
 }
