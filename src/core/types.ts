@@ -27,6 +27,17 @@ export interface Post {
   media?: MediaItem[];
   /** Optional link; adapters that have no link object (X) append it into the text. */
   link?: string;
+  /**
+   * Optional per-language translations, produced by the caller at creation time
+   * (the hub does not translate). The blog adapter publishes each as a linked
+   * language version; platforms without i18n (X) ignore this.
+   */
+  translations?: { cs?: PostTranslation };
+}
+
+export interface PostTranslation {
+  title?: string;
+  text: string;
 }
 
 export type ErrorCode =

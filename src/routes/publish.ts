@@ -23,6 +23,11 @@ const publishSchema = z.object({
       text: z.string().default(""),
       media: z.array(mediaItemSchema).optional(),
       link: z.string().url().optional(),
+      translations: z
+        .object({
+          cs: z.object({ title: z.string().optional(), text: z.string().default("") }).optional(),
+        })
+        .optional(),
     })
     .refine((p) => p.text.trim().length > 0 || (p.media?.length ?? 0) > 0 || !!p.link, {
       message: "post must have text, media, or a link",

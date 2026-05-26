@@ -67,6 +67,30 @@ describe("BlogPublisher.publish", () => {
     expect(md.split("---").pop()).not.toContain("My first post");
   });
 
+  it("emits lang + translationKey, and publishes both languages when a cs translation is given", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish({
+      title: "Hello",
+      text: "english body",
+      translations: { cs: { title: "Ahoj", text: "český text" } },
+    });
+    expect(res.ok).toBe(true);
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2); // en + cs markdown (no media)
+    const en = calls.find((c) => /2026-05-25-hello\.md$/.test(c[0].path))![0];
+    const cs = calls.find((c) => /\.cs\.md$/.test(c[0].path))![0];
+    const enMd = Buffer.from(en.contentBase64, "base64").toString("utf8");
+    const csMd = Buffer.from(cs.contentBase64, "base64").toString("utf8");
+    expect(enMd).toContain("lang: en");
+    expect(enMd).toContain('translationKey: "2026-05-25-hello"');
+    expect(enMd).toContain('title: "Hello"');
+    expect(enMd).toContain("english body");
+    expect(csMd).toContain("lang: cs");
+    expect(csMd).toContain('translationKey: "2026-05-25-hello"');
+    expect(csMd).toContain('title: "Ahoj"');
+    expect(csMd).toContain("český text");
+  });
+
   it("appends a link to the body when present", async () => {
     const client = mockClient();
     await adapter(client).publish({ title: "T", text: "see this", link: "https://lilgeckos.com/x" });

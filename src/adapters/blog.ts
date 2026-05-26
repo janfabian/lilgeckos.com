@@ -99,18 +99,24 @@ export class BlogPublisher implements Publisher {
         embeds.push(embedFor(item, publicUrl, title));
       }
 
-      // 2) Write the post markdown (media embeds first, then body + link).
-      const fullBody = [embeds.join("\n\n"), appendLink(body, post.link)]
-        .filter((s) => s.length > 0)
-        .join("\n\n");
-      const markdown = renderMarkdown({ title, body: fullBody, date: now });
-      const path = `${this.config.contentDir.replace(/\/+$/, "")}/${id}.md`;
-      await this.client.createFile({
-        path,
-        contentBase64: Buffer.from(markdown, "utf8").toString("base64"),
-        message: `blog: ${title}`.slice(0, 100),
-        branch,
-      });
+      // 2) Write the post markdown per language. translationKey ties the
+      //    en + cs versions together; media embeds are shared across both.
+      const dir = this.config.contentDir.replace(/\/+$/, "");
+      const writeLang = async (lang: "en" | "cs", ttl: string, bodyText: string) => {
+        const fullBody = [embeds.join("\n\n"), appendLink(bodyText, post.link)]
+          .filter((s) => s.length > 0)
+          .join("\n\n");
+        const md = renderMarkdown({ title: ttl, body: fullBody, date: now, lang, translationKey: id });
+        await this.client.createFile({
+          path: `${dir}/${id}${lang === "en" ? "" : `.${lang}`}.md`,
+          contentBase64: Buffer.from(md, "utf8").toString("base64"),
+          message: `blog: ${ttl}`.slice(0, 100),
+          branch,
+        });
+      };
+      await writeLang("en", title, body);
+      const cs = post.translations?.cs;
+      if (cs) await writeLang("cs", cs.title?.trim() || title, cs.text ?? "");
       return {
         platform: this.platform,
         ok: true,
@@ -184,12 +190,20 @@ export function appendLink(body: string, link?: string): string {
 }
 
 /** Render YAML frontmatter + body. Frontmatter strings are quoted + escaped. */
-export function renderMarkdown(args: { title: string; body: string; date: Date }): string {
+export function renderMarkdown(args: {
+  title: string;
+  body: string;
+  date: Date;
+  lang?: "en" | "cs";
+  translationKey?: string;
+}): string {
   const fm = [
     "---",
     `title: ${yamlString(args.title)}`,
     `pubDate: ${args.date.toISOString()}`,
     "draft: false",
+    ...(args.lang ? [`lang: ${args.lang}`] : []),
+    ...(args.translationKey ? [`translationKey: ${yamlString(args.translationKey)}`] : []),
     "---",
   ].join("\n");
   return `${fm}\n\n${args.body}\n`.replace(/\n{3,}/g, "\n\n");
