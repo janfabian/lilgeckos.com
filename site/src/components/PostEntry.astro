@@ -1,18 +1,22 @@
 ---
 import type { CollectionEntry } from 'astro:content';
 import { firstMedia } from '../lib/posts';
+import { type Lang, localized } from '../lib/i18n';
 
 interface Props {
   post: CollectionEntry<'blog'>;
   base: string;
+  lang: Lang;
 }
-const { post, base } = Astro.props;
+const { post, base, lang } = Astro.props;
 const media = firstMedia(post.body);
-const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
+const locale = lang === 'cs' ? 'cs-CZ' : 'en-US';
+const fmt = (d: Date) => d.toLocaleDateString(locale, { dateStyle: 'medium' });
+const href = `${base}${localized(lang, '/blog')}/${post.data.translationKey}`;
 ---
 
 <li>
-  <a class="entry" href={`${base}/blog/${post.id}`}>
+  <a class="entry" href={href}>
     <div class="entry-main">
       <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
       <span class="ttl">{post.data.title}</span>

@@ -9,6 +9,10 @@ const blog = defineCollection({
     description: z.string().optional(),
     pubDate: z.coerce.date(),
     draft: z.boolean().default(false),
+    // i18n: language of this file, and the shared key linking its translations.
+    lang: z.enum(['en', 'cs']).default('en'),
+    // translationKey ties the en + cs versions of one post together (the canonical slug).
+    translationKey: z.string(),
   }),
 });
 

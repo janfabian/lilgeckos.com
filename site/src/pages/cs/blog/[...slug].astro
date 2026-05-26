@@ -1,12 +1,12 @@
 ---
 import { getCollection, render } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import ShareButtons from '../../components/ShareButtons.astro';
-import { STRINGS, localized } from '../../lib/i18n';
-const lang = 'en' as const;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import ShareButtons from '../../../components/ShareButtons.astro';
+import { STRINGS, localized } from '../../../lib/i18n';
+const lang = 'cs' as const;
 const t = STRINGS[lang];
 export async function getStaticPaths() {
-  const posts = (await getCollection('blog', ({ data }) => !data.draft && data.lang === 'en')).sort(
+  const posts = (await getCollection('blog', ({ data }) => !data.draft && data.lang === 'cs')).sort(
     (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
   );
   return posts.map((post, i) => ({
@@ -17,12 +17,12 @@ export async function getStaticPaths() {
 const { post, newer, older } = Astro.props;
 const { Content } = await render(post);
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
+const fmt = (d: Date) => d.toLocaleDateString('cs-CZ', { dateStyle: 'medium' });
 const key = post.data.translationKey;
 const blogBase = `${base}${localized(lang, '/blog')}`;
 const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://lilgeckos.com').href;
 ---
-<BaseLayout title={`${post.data.title} — lilgeckos.com`} description={post.data.description} lang={lang} switchHref={`${localized('cs', '/blog')}/${key}`}>
+<BaseLayout title={`${post.data.title} — lilgeckos.com`} description={post.data.description} lang={lang} switchHref={`${localized('en', '/blog')}/${key}`}>
   <nav class="crumbs">
     <a href={blogBase}>{t.allPosts}</a>
     <span class="crumbs-meta">{key}</span>
@@ -30,7 +30,7 @@ const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://lilgeckos.com
   <article class="post post-solo">
     <div class="post-head">
       <time datetime={post.data.pubDate.toISOString()}>{fmt(post.data.pubDate)}</time>
-      <span class="kind">journal</span>
+      <span class="kind">deník</span>
     </div>
     <h1 class="ttl">{post.data.title}</h1>
     <div class="post-body"><Content /></div>

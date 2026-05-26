@@ -2,17 +2,25 @@
 // Layout adapted from the Claude Design "lilgeckos — a journal" handoff:
 // single-channel cool-grey palette, Geist + Geist Mono, single-post-item chrome.
 // Single-column feed (the sidebar/search/lightbox from the mock are out of scope).
+import { type Lang, STRINGS, localized, otherLang } from "../lib/i18n";
 interface Props {
   title: string;
   description?: string;
+  lang?: Lang;
+  /** URL of the other-language version of THIS page (for the switcher). */
+  switchHref?: string;
 }
-const { title, description } = Astro.props;
+const { title, description, lang = "en", switchHref } = Astro.props;
+const t = STRINGS[lang];
+const other = otherLang(lang);
 // Strip trailing slash so `${base}/path` yields one slash for "/" or "/lilgeckos.com".
 const base = import.meta.env.BASE_URL.replace(/\/$/, "");
+const home = `${base}${localized(lang, "/")}`;
+const journal = `${base}${localized(lang, "/blog")}`;
 ---
 
 <!doctype html>
-<html lang="en">
+<html lang={lang}>
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -102,6 +110,10 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         letter-spacing: 0.02em;
       }
       .masthead nav a:hover { color: var(--ink); }
+      .langswitch { display: inline-flex; gap: 6px; align-items: baseline; }
+      .langswitch .cur { color: var(--ink); font-weight: 500; }
+      .langswitch a { color: var(--faint); }
+      .langswitch a:hover { color: var(--ink); }
 
       /* Feed + list */
       .feed { display: flex; flex-direction: column; gap: 56px; min-width: 0; }
@@ -256,6 +268,17 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
         padding: 10px 14px; align-self: center;
       }
 
+      /* Home intro */
+      .intro { margin-bottom: 56px; }
+      .intro h1 { margin: 0 0 14px; font-size: 34px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.1; }
+      .intro .lede { margin: 0; font-size: 17px; color: var(--ink-soft); line-height: 1.6; max-width: 52ch; }
+      .more-link {
+        display: inline-block; margin-top: 30px;
+        font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.02em;
+        color: var(--ink-soft); text-decoration: none;
+      }
+      .more-link:hover { color: var(--ink); }
+
       /* Share row on single posts */
       .share {
         display: flex;
@@ -307,17 +330,23 @@ const base = import.meta.env.BASE_URL.replace(/\/$/, "");
   <body>
     <div class="wrap">
       <header class="masthead">
-        <a class="wordmark" href={`${base}/`}>lilgeckos<span class="dot"></span><small>.com</small></a>
+        <a class="wordmark" href={home}>lilgeckos<span class="dot"></span><small>.com</small></a>
         <nav>
-          <a href={`${base}/blog`}>journal</a>
+          <a href={journal}>{t.journalNav}</a>
           <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">@lilgeckos</a>
+          {switchHref && (
+            <span class="langswitch">
+              <span class="cur">{lang.toUpperCase()}</span>
+              <a href={`${base}${switchHref}`}>{other.toUpperCase()}</a>
+            </span>
+          )}
         </nav>
       </header>
       <slot />
       <footer class="footer">
         <span>© {new Date().getFullYear()} lilgeckos · est. 2026</span>
         <span>
-          <a href={`${base}/blog`}>journal</a> ·
+          <a href={journal}>{t.journalNav}</a> ·
           <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">x.com/lilgeckos</a>
         </span>
       </footer>

@@ -1,9 +1,9 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../layouts/BaseLayout.astro';
-import PostEntry from '../components/PostEntry.astro';
-import { STRINGS, postCount } from '../lib/i18n';
-const lang = 'en' as const;
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PostEntry from '../../components/PostEntry.astro';
+import { STRINGS, postCount } from '../../lib/i18n';
+const lang = 'cs' as const;
 const t = STRINGS[lang];
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const all = (await getCollection('blog', ({ data }) => !data.draft && data.lang === lang)).sort(
@@ -11,7 +11,7 @@ const all = (await getCollection('blog', ({ data }) => !data.draft && data.lang 
 );
 const latest = all.slice(0, 5);
 ---
-<BaseLayout title="lilgeckos.com" description={t.homeLede} lang={lang} switchHref="/cs/">
+<BaseLayout title="lilgeckos.com" description={t.homeLede} lang={lang} switchHref="/">
   <section class="intro">
     <h1>{t.homeTitle}</h1>
     <p class="lede">{t.homeLede}</p>
@@ -20,6 +20,6 @@ const latest = all.slice(0, 5);
     <div class="feed-head"><h1>{t.latest}</h1><span class="count">{postCount(all.length, lang)}</span></div>
     {latest.length === 0 && <p class="crumbs-meta">{t.noPosts}</p>}
     <ul class="post-list">{latest.map((post) => <PostEntry post={post} base={base} lang={lang} />)}</ul>
-    {all.length > latest.length && <a class="more-link" href={`${base}/blog`}>All posts →</a>}
+    {all.length > latest.length && <a class="more-link" href={`${base}/cs/blog`}>Všechny příspěvky →</a>}
   </section>
 </BaseLayout>

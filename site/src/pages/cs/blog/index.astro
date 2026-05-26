@@ -1,16 +1,16 @@
 ---
 import { getCollection } from 'astro:content';
-import BaseLayout from '../../layouts/BaseLayout.astro';
-import PostEntry from '../../components/PostEntry.astro';
-import { STRINGS, postCount } from '../../lib/i18n';
-const lang = 'en' as const;
+import BaseLayout from '../../../layouts/BaseLayout.astro';
+import PostEntry from '../../../components/PostEntry.astro';
+import { STRINGS, postCount } from '../../../lib/i18n';
+const lang = 'cs' as const;
 const t = STRINGS[lang];
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 const posts = (await getCollection('blog', ({ data }) => !data.draft && data.lang === lang)).sort(
   (a, b) => b.data.pubDate.getTime() - a.data.pubDate.getTime(),
 );
 ---
-<BaseLayout title="Journal — lilgeckos.com" description="Notes, photos and clips from lilgeckos." lang={lang} switchHref="/cs/blog">
+<BaseLayout title="Deník — lilgeckos.com" description="Poznámky, fotky a videa z lilgeckos." lang={lang} switchHref="/blog">
   <section class="feed">
     <div class="feed-head"><h1>{t.journalTitle}</h1><span class="count">{postCount(posts.length, lang)}</span></div>
     {posts.length === 0 && <p class="crumbs-meta">{t.noPosts}</p>}
