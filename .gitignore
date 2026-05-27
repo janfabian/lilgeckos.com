@@ -9,3 +9,5 @@ site/.astro/
 *.log
 .DS_Store
 coverage/
+# Local Claude Code settings (permission rules etc.) — keep out of the public repo.
+.claude/
