@@ -40,7 +40,15 @@ if (!APP_ID || !APP_SECRET) {
 const VERSION = process.env.FACEBOOK_GRAPH_VERSION || "v21.0";
 const GRAPH = `https://graph.facebook.com/${VERSION}`;
 const DIALOG = `https://www.facebook.com/${VERSION}/dialog/oauth`;
-const SCOPES = ["pages_show_list", "pages_read_engagement", "pages_manage_posts"];
+const SCOPES = [
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_manage_posts",
+  // Instagram (Facebook-Login publishing path) — needs these two added under
+  // the app's use case → Permissions, else the dialog throws "Invalid Scopes".
+  "instagram_basic",
+  "instagram_content_publish",
+];
 
 const PORT = Number(process.env.FACEBOOK_AUTH_PORT || 4181);
 const redirectUri = `http://localhost:${PORT}/`;
@@ -143,6 +151,27 @@ async function finish(code: string): Promise<void> {
       `\n✅ Wrote FACEBOOK_PAGE_ID (${page.id}) and FACEBOOK_PAGE_ACCESS_TOKEN to ${ENV_PATH} (token not printed).`,
     );
     console.log(`   Page: ${page.name}`);
+
+    // Discover the linked Instagram Business account (needs instagram_basic, now requested).
+    try {
+      const ig = await graphGet(String(page.id), {
+        fields: "instagram_business_account{id,username}",
+        access_token: String(page.access_token),
+      });
+      const iga = ig?.instagram_business_account;
+      if (iga?.id) {
+        writeEnvVar("INSTAGRAM_BUSINESS_ACCOUNT_ID", String(iga.id));
+        console.log(
+          `   📸 Instagram linked: @${iga.username ?? "?"} (id ${iga.id}) → wrote INSTAGRAM_BUSINESS_ACCOUNT_ID.`,
+        );
+      } else {
+        console.log(
+          "   ⚠️  No Instagram Business account is linked to this Page. Link a *Business/Creator* IG account to the Page, then re-run.",
+        );
+      }
+    } catch (e) {
+      console.log(`   ⚠️  Could not read Instagram link: ${e instanceof Error ? e.message : e}`);
+    }
     if (Array.isArray(page.tasks) && !page.tasks.includes("CREATE_CONTENT")) {
       console.log(
         "   ⚠️  This page token may lack CREATE_CONTENT (posting) rights — confirm you're a full admin of the Page.",

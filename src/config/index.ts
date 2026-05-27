@@ -3,6 +3,7 @@ import {
   type AppConfig,
   type TwitterCredentials,
   type FacebookCredentials,
+  type InstagramCredentials,
   type YouTubeCredentials,
   type BlogConfig,
 } from "./env.js";
@@ -64,6 +65,19 @@ export function loadConfig(
     );
   }
 
+  let instagram: InstagramCredentials | undefined;
+  if (e.INSTAGRAM_BUSINESS_ACCOUNT_ID && e.FACEBOOK_PAGE_ACCESS_TOKEN) {
+    instagram = {
+      igUserId: e.INSTAGRAM_BUSINESS_ACCOUNT_ID,
+      accessToken: e.FACEBOOK_PAGE_ACCESS_TOKEN,
+      graphVersion: e.FACEBOOK_GRAPH_VERSION,
+    };
+  } else if (e.INSTAGRAM_BUSINESS_ACCOUNT_ID) {
+    warn(
+      "whatsapp hub: INSTAGRAM_BUSINESS_ACCOUNT_ID is set but FACEBOOK_PAGE_ACCESS_TOKEN is missing — Instagram adapter disabled (it publishes via the Page token).",
+    );
+  }
+
   let youtube: YouTubeCredentials | undefined;
   if (e.YOUTUBE_CLIENT_ID && e.YOUTUBE_CLIENT_SECRET && e.YOUTUBE_REFRESH_TOKEN) {
     youtube = {
@@ -102,6 +116,7 @@ export function loadConfig(
     videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
     twitter,
     facebook,
+    instagram,
     youtube,
     blog,
   };

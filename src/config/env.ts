@@ -22,6 +22,10 @@ export const envSchema = z.object({
   FACEBOOK_PAGE_ID: z.preprocess(blankToUndef, z.string().optional()),
   FACEBOOK_PAGE_ACCESS_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   FACEBOOK_GRAPH_VERSION: z.preprocess(blankToUndef, z.string().default("v21.0")),
+  // Instagram (Graph API via Facebook Login): the IG Business account id linked
+  // to the Page. Publishing reuses the Facebook Page access token + graph
+  // version. Enabled when this + FACEBOOK_PAGE_ACCESS_TOKEN are set.
+  INSTAGRAM_BUSINESS_ACCOUNT_ID: z.preprocess(blankToUndef, z.string().optional()),
   // Blog adapter — publishes markdown posts to the Astro site (site/) via the
   // GitHub Contents API. Enabled when both token and repo are present.
   YOUTUBE_CLIENT_ID: z.preprocess(blankToUndef, z.string().optional()),
@@ -71,6 +75,8 @@ export interface AppConfig {
   twitter?: TwitterCredentials;
   /** Present only when both Facebook page id + token are set. */
   facebook?: FacebookCredentials;
+  /** Present only when INSTAGRAM_BUSINESS_ACCOUNT_ID + FACEBOOK_PAGE_ACCESS_TOKEN are set. */
+  instagram?: InstagramCredentials;
   /** Present only when YouTube OAuth client id/secret/refresh token are all set. */
   youtube?: YouTubeCredentials;
   /** Present only when both BLOG_GITHUB_TOKEN and BLOG_REPO are set. */
@@ -87,6 +93,14 @@ export interface YouTubeCredentials {
 export interface FacebookCredentials {
   pageId: string;
   pageAccessToken: string;
+  graphVersion: string;
+}
+
+export interface InstagramCredentials {
+  /** instagram_business_account id, discovered from the linked Page. */
+  igUserId: string;
+  /** Reuses the Facebook Page access token (Facebook-Login publishing path). */
+  accessToken: string;
   graphVersion: string;
 }
 

@@ -3,9 +3,11 @@ import type { Publisher } from "./publisher.js";
 import type { PlatformId } from "./types.js";
 import { TwitterPublisher } from "../adapters/twitter.js";
 import { FacebookPublisher } from "../adapters/facebook.js";
+import { InstagramPublisher } from "../adapters/instagram.js";
 import { YouTubePublisher } from "../adapters/youtube.js";
 import { BlogPublisher } from "../adapters/blog.js";
 import { MockPublisher } from "../adapters/mock.js";
+import { GitHubMediaHost } from "./media-host.js";
 
 /**
  * Build the set of enabled adapters from config. Adding a platform later =
@@ -28,6 +30,20 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
     registry.set(
       "facebook",
       new FacebookPublisher(config.facebook, {
+        mediaMaxBytes: config.mediaMaxBytes,
+        videoMaxBytes: config.videoMaxBytes,
+      }),
+    );
+  }
+  if (config.instagram) {
+    // IG ingests media by public URL — host it in the blog repo (served raw).
+    const mediaHost = config.blog
+      ? new GitHubMediaHost({ token: config.blog.token, repo: config.blog.repo, branch: config.blog.branch })
+      : undefined;
+    registry.set(
+      "instagram",
+      new InstagramPublisher(config.instagram, {
+        mediaHost,
         mediaMaxBytes: config.mediaMaxBytes,
         videoMaxBytes: config.videoMaxBytes,
       }),
