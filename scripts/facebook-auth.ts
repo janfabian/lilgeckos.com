@@ -126,15 +126,10 @@ async function finish(code: string): Promise<void> {
       fields: "id,name,access_token,tasks",
     });
     const pages: any[] = accounts.data ?? [];
-    if (pages.length === 0) {
-      console.error(
-        "\n❌ No Pages found for this account. You must be an admin of a Facebook Page (Groups aren't supported).",
-      );
-      process.exit(1);
-    }
-
-    let page = pages[0];
-    if (pages.length > 1) {
+    let page: any;
+    if (pages.length === 1) {
+      page = pages[0];
+    } else if (pages.length > 1) {
       console.log("\nPages you manage:");
       pages.forEach((p, i) => console.log(`  [${i + 1}] ${p.name}  (id ${p.id})`));
       const idx = Number((await ask(`Pick a page [1-${pages.length}]: `)).trim()) - 1;
@@ -143,6 +138,42 @@ async function finish(code: string): Promise<void> {
         process.exit(1);
       }
       page = pages[idx];
+    } else {
+      // /me/accounts comes back empty for Pages in a Business Portfolio / New
+      // Pages Experience even when pages_show_list is granted. If we already
+      // know the Page id (a prior run wrote it), fetch its token directly with
+      // the user token — works as long as this account has a role on the Page.
+      const known = process.env.FACEBOOK_PAGE_ID;
+      if (known) {
+        try {
+          const p = await graphGet(known, { fields: "name,access_token", access_token: long.access_token });
+          if (p?.access_token) {
+            page = { id: known, name: p.name, access_token: p.access_token };
+            console.log(`\nℹ️  /me/accounts was empty, but reached the Page directly via FACEBOOK_PAGE_ID: ${p.name}`);
+          }
+        } catch {
+          /* fall through to diagnostics */
+        }
+      }
+    }
+
+    if (!page) {
+      console.error("\n❌ No Pages found for this account. Diagnosing what the token actually granted…");
+      try {
+        const me = await graphGet("me", { access_token: long.access_token, fields: "id,name" });
+        console.error(`   Authorized as: ${me.name} (id ${me.id})`);
+        const perms = await graphGet("me/permissions", { access_token: long.access_token });
+        const rows: any[] = perms.data ?? [];
+        const granted = rows.filter((p) => p.status === "granted").map((p) => p.permission);
+        console.error(`   Granted:  ${granted.join(", ") || "(none)"}`);
+        console.error(
+          "   → pages_show_list is granted but no Pages came back. The Page is likely in a Business\n" +
+            "     Portfolio / New Pages Experience, or this account doesn't administer it.",
+        );
+      } catch (e) {
+        console.error(`   (couldn't read /me/permissions: ${e instanceof Error ? e.message : e})`);
+      }
+      process.exit(1);
     }
 
     writeEnvVar("FACEBOOK_PAGE_ID", String(page.id));
