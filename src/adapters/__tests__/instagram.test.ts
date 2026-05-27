@@ -18,7 +18,10 @@ beforeAll(() => {
 });
 afterAll(() => [imgA, imgB, vid].forEach((f) => rmSync(f, { force: true })));
 
-const host: MediaHost = { hostAll: vi.fn(async (paths: string[]) => paths.map((_, i) => `https://raw.example/${i}.bin`)) };
+const cleanup = vi.fn(async () => {});
+const host: MediaHost = {
+  host: vi.fn(async (paths: string[]) => ({ urls: paths.map((_, i) => `https://raw.example/${i}.bin`), cleanup })),
+};
 
 function okFetch(status = "FINISHED"): IgFetchLike {
   let n = 0;
@@ -57,6 +60,7 @@ describe("InstagramPublisher.publish", () => {
     expect(create.body!.get("image_url")).toBe("https://raw.example/0.bin");
     expect(create.body!.get("caption")).toBe("a gecko");
     expect(calls.some((c) => c[0].includes("/IG/media_publish"))).toBe(true);
+    expect(cleanup).toHaveBeenCalled(); // hosted media cleaned up after publish
   });
 
   it("single video -> REELS container, polls, publishes", async () => {

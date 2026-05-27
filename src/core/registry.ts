@@ -7,7 +7,7 @@ import { InstagramPublisher } from "../adapters/instagram.js";
 import { YouTubePublisher } from "../adapters/youtube.js";
 import { BlogPublisher } from "../adapters/blog.js";
 import { MockPublisher } from "../adapters/mock.js";
-import { GitHubMediaHost } from "./media-host.js";
+import { GitHubReleaseMediaHost } from "./media-host.js";
 
 /**
  * Build the set of enabled adapters from config. Adding a platform later =
@@ -36,9 +36,10 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
     );
   }
   if (config.instagram) {
-    // IG ingests media by public URL — host it in the blog repo (served raw).
+    // IG ingests media by public URL — host it as GitHub Release assets
+    // (outside git history, deleted right after IG ingests them).
     const mediaHost = config.blog
-      ? new GitHubMediaHost({ token: config.blog.token, repo: config.blog.repo, branch: config.blog.branch })
+      ? new GitHubReleaseMediaHost({ token: config.blog.token, repo: config.blog.repo })
       : undefined;
     registry.set(
       "instagram",

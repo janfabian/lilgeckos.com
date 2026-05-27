@@ -1,7 +1,7 @@
 import type { Publisher } from "../core/publisher.js";
 import type { Post, PublishResult, PlatformStatus, ErrorCode, MediaItem } from "../core/types.js";
 import type { InstagramCredentials } from "../config/env.js";
-import type { MediaHost } from "../core/media-host.js";
+import type { MediaHost, HostedMedia } from "../core/media-host.js";
 import { validateMedia } from "../core/media.js";
 import { mapFbError } from "./facebook.js";
 
@@ -97,8 +97,10 @@ export class InstagramPublisher implements Publisher {
     if (!this.host) return fail("validation", "Instagram has no media host configured (needs the blog GitHub repo to host media URLs)");
 
     const caption = post.text ?? "";
+    let hosted: HostedMedia | undefined;
     try {
-      const urls = await this.host.hostAll(media.map((m) => m.path));
+      hosted = await this.host.host(media.map((m) => m.path));
+      const urls = hosted.urls;
 
       let creationId: string;
       if (videos.length === 1) {
@@ -132,6 +134,10 @@ export class InstagramPublisher implements Publisher {
     } catch (err) {
       const { errorCode, message } = mapFbError(err);
       return fail(errorCode, message);
+    } finally {
+      // IG has copied the media by now (containers reach FINISHED before publish),
+      // so the hosted files are no longer needed — delete them. Best-effort.
+      if (hosted) await hosted.cleanup().catch(() => {});
     }
   }
 
