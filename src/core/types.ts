@@ -40,6 +40,19 @@ export interface PostTranslation {
   text: string;
 }
 
+/**
+ * Cross-platform context threaded through a single fan-out. The orchestrator
+ * runs some platforms before others and hands their results downstream via this.
+ *
+ * `youtube`: set after a successful YouTube upload in the same /publish call.
+ * The blog adapter uses it to embed the YouTube player instead of committing
+ * the raw video to the repo (avoids git bloat + GitHub Pages size/bandwidth
+ * limits). Absent when YouTube wasn't targeted or failed → blog self-hosts.
+ */
+export interface PublishContext {
+  youtube?: { videoId: string; url: string };
+}
+
 export type ErrorCode =
   | "auth"
   | "rate_limit"

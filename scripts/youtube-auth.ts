@@ -51,7 +51,7 @@ function extractCode(input: string): string | null {
     /* not a URL — fall through */
   }
   const m = s.match(/[?&]code=([^&\s]+)/);
-  if (m) return decodeURIComponent(m[1]);
+  if (m?.[1]) return decodeURIComponent(m[1]);
   return s; // assume they pasted the bare code
 }
 

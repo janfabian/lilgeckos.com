@@ -14,6 +14,13 @@ API) supports text, link, single/multiple images, and video. **YouTube** uploads
 Data API v3 (OAuth2) as a **Short** — vertical source + #Shorts; YouTube transcodes the file, so
 no ffmpeg needed. Instagram lands in a later increment.
 
+**Video handling across blog + YouTube:** when a single `/publish` targets both `youtube`
+and `blog`, the hub uploads to YouTube **first** and the blog embeds the resulting Short
+(iframe) instead of committing the raw `.mp4` — keeping videos out of the git repo and clear
+of GitHub Pages size/bandwidth limits. If YouTube isn't a target (or fails), the blog
+self-hosts the video as before. Orchestration detail lives in `src/core/orchestrator.ts`
+(YouTube runs before the concurrent fan-out, threading its id via `PublishContext`).
+
 ## API
 
 - `GET /health` — liveness, no auth.

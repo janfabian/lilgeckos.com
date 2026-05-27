@@ -1,7 +1,14 @@
 import { readFileSync } from "node:fs";
 import { basename, extname } from "node:path";
 import type { Publisher } from "../core/publisher.js";
-import type { Post, PublishResult, PlatformStatus, ErrorCode, MediaItem } from "../core/types.js";
+import type {
+  Post,
+  PublishResult,
+  PlatformStatus,
+  ErrorCode,
+  MediaItem,
+  PublishContext,
+} from "../core/types.js";
 import type { BlogConfig } from "../config/env.js";
 import { validateMedia } from "../core/media.js";
 
@@ -57,7 +64,7 @@ export class BlogPublisher implements Publisher {
     this.now = deps.now ?? (() => new Date());
   }
 
-  async publish(post: Post): Promise<PublishResult> {
+  async publish(post: Post, ctx?: PublishContext): Promise<PublishResult> {
     const start = Date.now();
     const fail = (errorCode: ErrorCode, error: string): PublishResult => ({
       platform: this.platform,
@@ -84,10 +91,18 @@ export class BlogPublisher implements Publisher {
     const branch = this.config.branch;
 
     try {
-      // 1) Upload each media file into the site's public dir, collect markdown embeds.
+      // 1) Build the markdown embeds. A video that was just uploaded to YouTube
+      //    (in the same fan-out) is embedded as the YouTube player rather than
+      //    committed to the repo — avoids git bloat + GitHub Pages limits. Every
+      //    other media file (images, or a video when YouTube wasn't involved) is
+      //    uploaded into the site's public dir and embedded by absolute URL.
       const embeds: string[] = [];
       for (let i = 0; i < media.length; i++) {
         const item = media[i]!;
+        if (item.kind === "video" && ctx?.youtube?.videoId) {
+          embeds.push(youtubeEmbed(ctx.youtube.videoId));
+          continue;
+        }
         const fileName = mediaFileName(item, i);
         await this.client.createFile({
           path: `${mediaDir}/${fileName}`,
@@ -259,6 +274,22 @@ export function embedFor(item: MediaItem, url: string, title: string): string {
   }
   const alt = (item.altText ?? title).replace(/[[\]]/g, "");
   return `![${alt}](${url})`;
+}
+
+/**
+ * Responsive YouTube player embed (inline-styled so it needs no site CSS).
+ * Used in place of committing the raw video when the same fan-out already
+ * uploaded it to YouTube. videoId is hard-sanitized to YouTube's id charset.
+ */
+export function youtubeEmbed(videoId: string): string {
+  const id = videoId.replace(/[^a-zA-Z0-9_-]/g, "");
+  return (
+    `<div style="position:relative;aspect-ratio:16/9;max-width:100%;margin:0.4em 0">` +
+    `<iframe src="https://www.youtube.com/embed/${id}" ` +
+    `style="position:absolute;inset:0;width:100%;height:100%;border:0;border-radius:4px" ` +
+    `loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" ` +
+    `allowfullscreen></iframe></div>`
+  );
 }
 
 /** Map a GitHub API error (or anything) to our ErrorCode without throwing. */

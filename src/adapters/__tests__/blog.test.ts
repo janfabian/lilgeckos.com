@@ -193,6 +193,50 @@ describe("BlogPublisher media", () => {
     expect(md).toContain("<video controls");
   });
 
+  it("embeds the YouTube player and skips uploading the video when ctx.youtube is set", async () => {
+    const client = mockClient();
+    const res = await adapter(client).publish(
+      { title: "Clip Post", text: "yum", media: [{ path: vid, kind: "video" }] },
+      { youtube: { videoId: "abc123", url: "https://www.youtube.com/shorts/abc123" } },
+    );
+    expect(res.ok).toBe(true);
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(1); // only the markdown — no media upload
+    const md = Buffer.from(calls[0]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain("youtube.com/embed/abc123");
+    expect(md).not.toContain("<video");
+    expect(md).not.toContain("blog-media");
+  });
+
+  it("still uploads images while embedding the video from YouTube", async () => {
+    const client = mockClient();
+    await adapter(client).publish(
+      {
+        title: "Mix",
+        text: "x",
+        media: [
+          { path: img, kind: "image", altText: "a" },
+          { path: vid, kind: "video" },
+        ],
+      },
+      { youtube: { videoId: "yt9", url: "u" } },
+    );
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2); // image upload + markdown (video NOT uploaded)
+    const md = Buffer.from(calls[1]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain("youtube.com/embed/yt9");
+    expect(md).toContain("blog-media"); // the image is still self-hosted
+  });
+
+  it("self-hosts the video when no YouTube context is given (fallback)", async () => {
+    const client = mockClient();
+    await adapter(client).publish({ title: "Solo", text: "x", media: [{ path: vid, kind: "video" }] });
+    const calls = (client.createFile as ReturnType<typeof vi.fn>).mock.calls;
+    expect(calls.length).toBe(2); // upload + markdown
+    const md = Buffer.from(calls[1]![0].contentBase64, "base64").toString("utf8");
+    expect(md).toContain("<video controls");
+  });
+
   it("rejects a missing media file without any upload", async () => {
     const client = mockClient();
     const res = await adapter(client).publish({

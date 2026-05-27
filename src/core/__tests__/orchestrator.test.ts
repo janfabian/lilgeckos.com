@@ -2,12 +2,30 @@ import { describe, it, expect } from "vitest";
 import { publishToTargets, summarize } from "../orchestrator.js";
 import { MockPublisher } from "../../adapters/mock.js";
 import type { Publisher } from "../publisher.js";
-import type { PlatformId, Post } from "../types.js";
+import type { PlatformId, Post, PublishResult, PublishContext, PlatformStatus } from "../types.js";
 
 const post: Post = { text: "hello" };
 
 function registry(entries: [PlatformId, Publisher][]): Map<PlatformId, Publisher> {
   return new Map(entries);
+}
+
+/** Records the ctx it was handed, for asserting cross-platform threading. */
+class RecordingPublisher implements Publisher {
+  receivedCtx?: PublishContext;
+  publishedAt = 0;
+  constructor(
+    readonly platform: PlatformId,
+    private readonly result: Partial<PublishResult> = {},
+  ) {}
+  async publish(_post: Post, ctx?: PublishContext): Promise<PublishResult> {
+    this.receivedCtx = ctx;
+    this.publishedAt = performance.now();
+    return { platform: this.platform, ok: true, durationMs: 1, ...this.result };
+  }
+  async checkStatus(): Promise<PlatformStatus> {
+    return { platform: this.platform, enabled: true, credentialsPresent: true };
+  }
 }
 
 describe("publishToTargets", () => {
@@ -40,6 +58,37 @@ describe("publishToTargets", () => {
       errorCode: "validation",
       error: "platform not enabled",
     });
+  });
+
+  it("publishes YouTube first and threads its video id into the blog's ctx", async () => {
+    const yt = new RecordingPublisher("youtube", {
+      postId: "vidXYZ",
+      url: "https://www.youtube.com/shorts/vidXYZ",
+    });
+    const blog = new RecordingPublisher("blog");
+    const reg = registry([
+      ["blog", blog],
+      ["youtube", yt],
+    ]);
+    const results = await publishToTargets(post, ["blog", "youtube"], reg);
+    // listed order preserved even though youtube runs first
+    expect(results.map((r) => r.platform)).toEqual(["blog", "youtube"]);
+    expect(yt.publishedAt).toBeLessThanOrEqual(blog.publishedAt);
+    expect(blog.receivedCtx?.youtube).toEqual({
+      videoId: "vidXYZ",
+      url: "https://www.youtube.com/shorts/vidXYZ",
+    });
+  });
+
+  it("leaves the blog ctx empty when YouTube fails (self-host fallback)", async () => {
+    const yt = new RecordingPublisher("youtube", { ok: false, errorCode: "auth" });
+    const blog = new RecordingPublisher("blog");
+    const reg = registry([
+      ["youtube", yt],
+      ["blog", blog],
+    ]);
+    await publishToTargets(post, ["youtube", "blog"], reg);
+    expect(blog.receivedCtx?.youtube).toBeUndefined();
   });
 });
 
