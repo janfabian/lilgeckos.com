@@ -13,6 +13,8 @@
     "blog:admin": "tsx scripts/blog-admin.ts",
     "x:admin": "tsx scripts/x-admin.ts",
     "auth:youtube": "tsx scripts/youtube-auth.ts",
+    "youtube:refresh": "tsx scripts/youtube-auth.ts && bash scripts/restart-hub.sh",
+    "hub:restart": "bash scripts/restart-hub.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
