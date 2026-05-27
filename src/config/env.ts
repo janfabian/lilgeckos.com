@@ -24,6 +24,10 @@ export const envSchema = z.object({
   FACEBOOK_GRAPH_VERSION: z.preprocess(blankToUndef, z.string().default("v21.0")),
   // Blog adapter — publishes markdown posts to the Astro site (site/) via the
   // GitHub Contents API. Enabled when both token and repo are present.
+  YOUTUBE_CLIENT_ID: z.preprocess(blankToUndef, z.string().optional()),
+  YOUTUBE_CLIENT_SECRET: z.preprocess(blankToUndef, z.string().optional()),
+  YOUTUBE_REFRESH_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
+  YOUTUBE_PRIVACY: z.preprocess(blankToUndef, z.enum(['public', 'unlisted', 'private']).default('public')),
   BLOG_GITHUB_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   BLOG_REPO: z.preprocess(blankToUndef, z.string().optional()),
   BLOG_BRANCH: z.preprocess(blankToUndef, z.string().default("main")),
@@ -67,8 +71,17 @@ export interface AppConfig {
   twitter?: TwitterCredentials;
   /** Present only when both Facebook page id + token are set. */
   facebook?: FacebookCredentials;
+  /** Present only when YouTube OAuth client id/secret/refresh token are all set. */
+  youtube?: YouTubeCredentials;
   /** Present only when both BLOG_GITHUB_TOKEN and BLOG_REPO are set. */
   blog?: BlogConfig;
+}
+
+export interface YouTubeCredentials {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  privacy: 'public' | 'unlisted' | 'private';
 }
 
 export interface FacebookCredentials {

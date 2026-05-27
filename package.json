@@ -12,14 +12,17 @@
     "subscriber": "tsx src/subscriber/index.ts",
     "blog:admin": "tsx scripts/blog-admin.ts",
     "x:admin": "tsx scripts/x-admin.ts",
+    "auth:youtube": "tsx scripts/youtube-auth.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"
   },
   "dependencies": {
+    "@googleapis/youtube": "^32.0.0",
     "@hono/node-server": "^1.13.7",
     "@hono/zod-validator": "^0.4.1",
     "dotenv": "^16.4.5",
+    "google-auth-library": "^10.6.2",
     "hono": "^4.6.13",
     "pino": "^9.5.0",
     "twitter-api-v2": "^1.29.0",

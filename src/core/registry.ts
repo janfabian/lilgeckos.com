@@ -3,6 +3,7 @@ import type { Publisher } from "./publisher.js";
 import type { PlatformId } from "./types.js";
 import { TwitterPublisher } from "../adapters/twitter.js";
 import { FacebookPublisher } from "../adapters/facebook.js";
+import { YouTubePublisher } from "../adapters/youtube.js";
 import { BlogPublisher } from "../adapters/blog.js";
 import { MockPublisher } from "../adapters/mock.js";
 
@@ -30,6 +31,12 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
         mediaMaxBytes: config.mediaMaxBytes,
         videoMaxBytes: config.videoMaxBytes,
       }),
+    );
+  }
+  if (config.youtube) {
+    registry.set(
+      "youtube",
+      new YouTubePublisher(config.youtube, { videoMaxBytes: config.videoMaxBytes }),
     );
   }
   if (config.blog) {

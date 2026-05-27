@@ -10,8 +10,9 @@ hub does not connect to WhatsApp itself.
 ## Status
 
 **Twitter/X** supports text, image (≤4), video (1), and links. **Facebook Page** (Meta Graph
-API) supports text, link, single/multiple images, and video. Instagram / YouTube land in later
-increments.
+API) supports text, link, single/multiple images, and video. **YouTube** uploads a video via the
+Data API v3 (OAuth2) as a **Short** — vertical source + #Shorts; YouTube transcodes the file, so
+no ffmpeg needed. Instagram lands in a later increment.
 
 ## API
 

@@ -3,6 +3,7 @@ import {
   type AppConfig,
   type TwitterCredentials,
   type FacebookCredentials,
+  type YouTubeCredentials,
   type BlogConfig,
 } from "./env.js";
 
@@ -63,6 +64,20 @@ export function loadConfig(
     );
   }
 
+  let youtube: YouTubeCredentials | undefined;
+  if (e.YOUTUBE_CLIENT_ID && e.YOUTUBE_CLIENT_SECRET && e.YOUTUBE_REFRESH_TOKEN) {
+    youtube = {
+      clientId: e.YOUTUBE_CLIENT_ID,
+      clientSecret: e.YOUTUBE_CLIENT_SECRET,
+      refreshToken: e.YOUTUBE_REFRESH_TOKEN,
+      privacy: e.YOUTUBE_PRIVACY,
+    };
+  } else if (e.YOUTUBE_CLIENT_ID || e.YOUTUBE_CLIENT_SECRET || e.YOUTUBE_REFRESH_TOKEN) {
+    warn(
+      "whatsapp hub: partial YouTube credentials — adapter disabled until YOUTUBE_CLIENT_ID, YOUTUBE_CLIENT_SECRET and YOUTUBE_REFRESH_TOKEN are all set.",
+    );
+  }
+
   let blog: BlogConfig | undefined;
   if (e.BLOG_GITHUB_TOKEN && e.BLOG_REPO) {
     blog = {
@@ -87,6 +102,7 @@ export function loadConfig(
     videoMaxBytes: e.MEDIA_VIDEO_MAX_BYTES,
     twitter,
     facebook,
+    youtube,
     blog,
   };
 }
