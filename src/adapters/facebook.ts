@@ -17,6 +17,9 @@ export interface FacebookDeps {
   fetchImpl?: FetchLike;
   mediaMaxBytes?: number;
   videoMaxBytes?: number;
+  /** Publish a single video as a Reel (3-phase /video_reels) rather than a
+   *  regular /videos post. Reels get far more reach. Default true. */
+  reels?: boolean;
 }
 
 const DEFAULT_MAX_BYTES = 15 * 1024 * 1024;
@@ -43,6 +46,7 @@ export class FacebookPublisher implements Publisher {
   private readonly token: string;
   private readonly maxBytes: number;
   private readonly videoMaxBytes: number;
+  private readonly reels: boolean;
 
   constructor(creds: FacebookCredentials, deps: FacebookDeps = {}) {
     this.fetchImpl = deps.fetchImpl ?? (fetch as unknown as FetchLike);
@@ -51,6 +55,7 @@ export class FacebookPublisher implements Publisher {
     this.token = creds.pageAccessToken;
     this.maxBytes = deps.mediaMaxBytes ?? DEFAULT_MAX_BYTES;
     this.videoMaxBytes = deps.videoMaxBytes ?? DEFAULT_VIDEO_MAX_BYTES;
+    this.reels = deps.reels ?? true;
   }
 
   async publish(post: Post): Promise<PublishResult> {
@@ -85,8 +90,18 @@ export class FacebookPublisher implements Publisher {
     }
 
     try {
-      // Video
+      // Video — as a Reel (default) or a regular video post.
       if (videos.length === 1) {
+        if (this.reels) {
+          const reelId = await this.publishReel(videos[0]!, post.text);
+          return {
+            platform: this.platform,
+            ok: true,
+            postId: reelId,
+            url: `https://www.facebook.com/reel/${reelId}`,
+            durationMs: Date.now() - start,
+          };
+        }
         const fd = this.form({ description: post.text });
         appendFile(fd, "source", videos[0]!);
         const res = await this.graph(`${this.pageId}/videos`, fd);
@@ -148,6 +163,47 @@ export class FacebookPublisher implements Publisher {
         detail: `${errorCode}: ${message}`,
       };
     }
+  }
+
+  /**
+   * Publish a single video as a Facebook Reel via the 3-phase /video_reels flow:
+   *  1) start  -> reserve a video id + a one-time upload URL
+   *  2) upload -> POST the raw bytes to the rupload host (custom headers, not multipart)
+   *  3) finish -> publish (video_state=PUBLISHED). Returns the reel/video id.
+   * Processing is async on Meta's side; finish returning ok is success enough here.
+   */
+  private async publishReel(video: MediaItem, description: string): Promise<string> {
+    const startRes = await this.graph(`${this.pageId}/video_reels`, this.params({ upload_phase: "start" }));
+    const videoId = String(startRes.video_id ?? "");
+    const uploadUrl = String(startRes.upload_url ?? "");
+    if (!videoId || !uploadUrl) throw new Error("Reels start phase did not return video_id/upload_url");
+
+    const buf = readFileSync(video.path);
+    const up = await this.fetchImpl(uploadUrl, {
+      method: "POST",
+      headers: {
+        Authorization: `OAuth ${this.token}`,
+        offset: "0",
+        file_size: String(buf.byteLength),
+      },
+      body: buf,
+    });
+    if (!up.ok) {
+      const j = (await up.json().catch(() => ({}))) as { error?: GraphError };
+      const e = new Error(j?.error?.message ?? `Reels upload HTTP ${up.status}`) as Error & {
+        code?: number;
+        httpStatus?: number;
+      };
+      e.code = j?.error?.code;
+      e.httpStatus = up.status;
+      throw e;
+    }
+
+    await this.graph(
+      `${this.pageId}/video_reels`,
+      this.params({ upload_phase: "finish", video_id: videoId, video_state: "PUBLISHED", description }),
+    );
+    return videoId;
   }
 
   // --- helpers ---

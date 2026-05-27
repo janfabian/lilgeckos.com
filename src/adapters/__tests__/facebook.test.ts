@@ -28,6 +28,9 @@ function okFetch(): FetchLike {
     ok: true,
     status: 200,
     json: async () => {
+      if (url.includes("rupload.facebook.com")) return { success: true };
+      if (url.includes("/video_reels"))
+        return { video_id: "reel123", upload_url: "https://rupload.facebook.com/video-upload/v21.0/reel123" };
       if (url.includes("/videos")) return { id: "vid_post" };
       if (url.includes("/photos")) return { id: "photo_fbid", post_id: "photo_post" };
       if (url.includes("/feed")) return { id: "feed_post" };
@@ -85,9 +88,30 @@ describe("FacebookPublisher.publish", () => {
     expect(calls[2]![1].body.get("attached_media[0]")).toContain("photo_fbid");
   });
 
-  it("video -> /videos", async () => {
+  it("video (reels on, default) -> 3-phase /video_reels upload", async () => {
     const f = okFetch();
     const res = await adapter(f).publish({ text: "clip", media: [{ path: vidA, kind: "video" }] });
+    expect(res).toMatchObject({ ok: true, postId: "reel123" });
+    expect(res.url).toBe("https://www.facebook.com/reel/reel123");
+    const calls = (f as unknown as { mock: { calls: [string, { method: string; body?: URLSearchParams; headers?: Record<string, string> }][] } }).mock.calls;
+    // start -> upload -> finish
+    expect(calls[0]![0]).toContain("/PAGE/video_reels");
+    expect(calls[0]![1].body!.get("upload_phase")).toBe("start");
+    expect(calls[1]![0]).toContain("rupload.facebook.com");
+    expect(calls[1]![1].headers!.Authorization).toBe("OAuth TOK");
+    expect(calls[1]![1].headers!.file_size).toBe("2048");
+    expect(calls[2]![0]).toContain("/PAGE/video_reels");
+    expect(calls[2]![1].body!.get("upload_phase")).toBe("finish");
+    expect(calls[2]![1].body!.get("video_id")).toBe("reel123");
+  });
+
+  it("video with reels disabled -> /videos", async () => {
+    const f = okFetch();
+    const res = await new FacebookPublisher(creds, {
+      fetchImpl: f,
+      reels: false,
+      videoMaxBytes: 5_000_000,
+    }).publish({ text: "clip", media: [{ path: vidA, kind: "video" }] });
     expect(res).toMatchObject({ ok: true, postId: "vid_post" });
     const url = (f as unknown as { mock: { calls: [string][] } }).mock.calls[0]![0];
     expect(url).toContain("/PAGE/videos");
