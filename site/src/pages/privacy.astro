@@ -1,0 +1,54 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<BaseLayout
+  title="Privacy Policy · lilgeckos.com"
+  description="How lilgeckos.com handles data, including use of YouTube API Services."
+  lang="en"
+>
+  <nav class="crumbs">
+    <a href={`${base}/`}>← lilgeckos.com</a>
+    <span class="crumbs-meta">Privacy</span>
+  </nav>
+  <article class="post">
+    <h1 class="ttl">Privacy Policy</h1>
+    <div class="post-body">
+      <p><em>Last updated: 27 May 2026</em></p>
+
+      <p>
+        lilgeckos.com is a personal blog about keeping and breeding leopard geckos, run by an
+        individual hobbyist. This policy explains what data we handle.
+      </p>
+
+      <h2>The website</h2>
+      <p>
+        The site is a static blog hosted on GitHub Pages. We don't set advertising or tracking
+        cookies, and we don't run third-party analytics. Standard web-server logs (such as IP
+        address and browser type) may be processed by our hosting provider, GitHub, as described
+        in <a href="https://docs.github.com/en/site-policy/privacy-policies/github-general-privacy-statement" target="_blank" rel="noopener noreferrer">GitHub's Privacy Statement</a>.
+      </p>
+
+      <h2>Our posting tool and the YouTube API</h2>
+      <p>
+        We use a private tool to publish our own posts and videos to our own social channels,
+        including our own YouTube channel. This tool uses <strong>YouTube API Services</strong>.
+        It only uploads and reads content for the channel we own — it does not access, collect, or
+        store any data about site visitors, viewers, or other YouTube users.
+      </p>
+      <p>
+        In using YouTube features, our tool complies with the
+        <a href="https://www.youtube.com/t/terms" target="_blank" rel="noopener noreferrer">YouTube Terms of Service</a>.
+        Google's handling of data is described in the
+        <a href="https://policies.google.com/privacy" target="_blank" rel="noopener noreferrer">Google Privacy Policy</a>.
+        You can review or revoke our tool's access to your Google account at any time via the
+        <a href="https://myaccount.google.com/permissions" target="_blank" rel="noopener noreferrer">Google security settings</a> page.
+      </p>
+
+      <h2>Contact</h2>
+      <p>
+        Questions about this policy? Email <a href="mailto:hello@lilgeckos.com">hello@lilgeckos.com</a>.
+      </p>
+    </div>
+  </article>
+</BaseLayout>

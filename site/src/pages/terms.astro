@@ -1,0 +1,55 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+const base = import.meta.env.BASE_URL.replace(/\/$/, '');
+---
+<BaseLayout
+  title="Terms of Service · lilgeckos.com"
+  description="Terms of service for lilgeckos.com."
+  lang="en"
+>
+  <nav class="crumbs">
+    <a href={`${base}/`}>← lilgeckos.com</a>
+    <span class="crumbs-meta">Terms</span>
+  </nav>
+  <article class="post">
+    <h1 class="ttl">Terms of Service</h1>
+    <div class="post-body">
+      <p><em>Last updated: 27 May 2026</em></p>
+
+      <p>
+        Welcome to lilgeckos.com, a personal blog about leopard geckos. By using this website you
+        agree to these terms.
+      </p>
+
+      <h2>Content</h2>
+      <p>
+        All photos, videos, and writing on this site belong to lilgeckos.com unless stated
+        otherwise. You're welcome to link to our posts; please don't republish our media as your
+        own. The site is provided for general interest and entertainment — anything here about
+        gecko care reflects our own experience and is not professional veterinary advice.
+      </p>
+
+      <h2>Our posting tool</h2>
+      <p>
+        We use a private tool to publish our own content to our own social media channels. It is
+        operated solely by us, for our own accounts, and is not offered as a service to anyone
+        else.
+      </p>
+
+      <h2>No warranty</h2>
+      <p>
+        We do our best to keep the site accurate and available, but we can't guarantee it will be
+        error-free or uninterrupted, and we're not liable for any loss arising from its use.
+      </p>
+
+      <h2>Changes</h2>
+      <p>
+        We may update these terms from time to time; the "last updated" date above reflects the
+        current version.
+      </p>
+
+      <h2>Contact</h2>
+      <p><a href="mailto:hello@lilgeckos.com">hello@lilgeckos.com</a></p>
+    </div>
+  </article>
+</BaseLayout>
