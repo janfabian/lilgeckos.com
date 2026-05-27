@@ -3,6 +3,7 @@ import { getCollection, render } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import ShareButtons from '../../components/ShareButtons.astro';
 import { STRINGS, localized } from '../../lib/i18n';
+import { firstImage, excerpt } from '../../lib/posts';
 const lang = 'en' as const;
 const t = STRINGS[lang];
 export async function getStaticPaths() {
@@ -21,8 +22,10 @@ const fmt = (d: Date) => d.toLocaleDateString('en-US', { dateStyle: 'medium' });
 const key = post.data.translationKey;
 const blogBase = `${base}${localized(lang, '/blog')}`;
 const pageUrl = new URL(Astro.url.pathname, Astro.site ?? 'https://lilgeckos.com').href;
+const desc = post.data.description ?? excerpt(post.body);
+const ogImage = firstImage(post.body) ?? undefined;
 ---
-<BaseLayout title={`${post.data.title} — lilgeckos.com`} description={post.data.description} lang={lang} switchHref={`${localized('cs', '/blog')}/${key}`}>
+<BaseLayout title={`${post.data.title} — lilgeckos.com`} description={desc} lang={lang} switchHref={`${localized('cs', '/blog')}/${key}`} ogType="article" publishedDate={post.data.pubDate} image={ogImage}>
   <nav class="crumbs">
     <a href={blogBase}>{t.allPosts}</a>
     <span class="crumbs-meta">{key}</span>
