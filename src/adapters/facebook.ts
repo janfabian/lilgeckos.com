@@ -67,11 +67,16 @@ export class FacebookPublisher implements Publisher {
       errorCode,
       durationMs: Date.now() - start,
     });
-    const ok = (postId: string): PublishResult => ({
+    // Facebook returns the post id as `pageId_postId`, and the legacy URL
+    // `facebook.com/<that>` increasingly shows "broken link" (esp. for Pages
+    // in the New Pages Experience, which use a different actor id). Ask the
+    // Graph API for the authoritative `permalink_url` and use that; fall back
+    // to the constructed URL if the lookup fails.
+    const ok = async (postId: string): Promise<PublishResult> => ({
       platform: this.platform,
       ok: true,
       postId,
-      url: `https://www.facebook.com/${postId}`,
+      url: (await this.permalinkUrl(postId)) ?? `https://www.facebook.com/${postId}`,
       durationMs: Date.now() - start,
     });
 
@@ -105,14 +110,14 @@ export class FacebookPublisher implements Publisher {
         const fd = this.form({ description: post.text });
         appendFile(fd, "source", videos[0]!);
         const res = await this.graph(`${this.pageId}/videos`, fd);
-        return ok(String(res.id));
+        return await ok(String(res.id));
       }
       // Single image
       if (images.length === 1) {
         const fd = this.form({ message: post.text });
         appendFile(fd, "source", images[0]!);
         const res = await this.graph(`${this.pageId}/photos`, fd);
-        return ok(String(res.post_id ?? res.id));
+        return await ok(String(res.post_id ?? res.id));
       }
       // Multiple images: upload each unpublished, then a feed post referencing them
       if (images.length > 1) {
@@ -126,7 +131,7 @@ export class FacebookPublisher implements Publisher {
         const body = this.params({ message: post.text });
         fbids.forEach((id, i) => body.set(`attached_media[${i}]`, JSON.stringify({ media_fbid: id })));
         const res = await this.graph(`${this.pageId}/feed`, body);
-        return ok(String(res.id));
+        return await ok(String(res.id));
       }
       // Text / link only
       const body = this.params({ message: post.text });
@@ -204,6 +209,24 @@ export class FacebookPublisher implements Publisher {
       this.params({ upload_phase: "finish", video_id: videoId, video_state: "PUBLISHED", description }),
     );
     return videoId;
+  }
+
+  /** Best-effort lookup of a post's canonical share URL via Graph (`permalink_url`).
+   *  Returns undefined on any error; the publish() ok() fallback then uses a
+   *  constructed URL. Reels have their own working `/reel/<id>` URL, so this
+   *  is only used by the feed/photos/videos paths. */
+  private async permalinkUrl(postId: string): Promise<string | undefined> {
+    try {
+      const res = await this.graph(
+        `${postId}?fields=permalink_url&access_token=${encodeURIComponent(this.token)}`,
+        undefined,
+        "GET",
+      );
+      if (typeof res.permalink_url === "string") return res.permalink_url;
+    } catch {
+      /* fall back to the constructed URL */
+    }
+    return undefined;
   }
 
   // --- helpers ---

@@ -31,6 +31,8 @@ function okFetch(): FetchLike {
       if (url.includes("rupload.facebook.com")) return { success: true };
       if (url.includes("/video_reels"))
         return { video_id: "reel123", upload_url: "https://rupload.facebook.com/video-upload/v21.0/reel123" };
+      if (url.includes("fields=permalink_url"))
+        return { permalink_url: "https://www.facebook.com/PAGE_ACTOR/posts/POST" };
       if (url.includes("/videos")) return { id: "vid_post" };
       if (url.includes("/photos")) return { id: "photo_fbid", post_id: "photo_post" };
       if (url.includes("/feed")) return { id: "feed_post" };
@@ -44,15 +46,18 @@ function adapter(fetchImpl: FetchLike) {
 }
 
 describe("FacebookPublisher.publish", () => {
-  it("text-only -> /feed", async () => {
+  it("text-only -> /feed, returns the API's permalink_url (not the legacy composite URL)", async () => {
     const f = okFetch();
     const res = await adapter(f).publish({ text: "hello page" });
     expect(res).toMatchObject({ ok: true, platform: "facebook", postId: "feed_post" });
-    const [url, init] = (f as unknown as { mock: { calls: [string, { method: string; body: URLSearchParams }][] } }).mock.calls[0]!;
-    expect(url).toContain("/v21.0/PAGE/feed");
-    expect(init.method).toBe("POST");
-    expect(init.body.get("message")).toBe("hello page");
-    expect(init.body.get("access_token")).toBe("TOK");
+    expect(res.url).toBe("https://www.facebook.com/PAGE_ACTOR/posts/POST");
+    const calls = (f as unknown as { mock: { calls: [string, { method: string; body?: URLSearchParams }][] } }).mock.calls;
+    const feedCall = calls.find((c) => c[0].includes("/v21.0/PAGE/feed"))!;
+    expect(feedCall[1].method).toBe("POST");
+    expect(feedCall[1].body!.get("message")).toBe("hello page");
+    expect(feedCall[1].body!.get("access_token")).toBe("TOK");
+    // and the follow-up permalink fetch happened
+    expect(calls.some((c) => c[0].includes("fields=permalink_url"))).toBe(true);
   });
 
   it("link -> /feed with link param", async () => {
@@ -80,12 +85,14 @@ describe("FacebookPublisher.publish", () => {
       ],
     });
     expect(res).toMatchObject({ ok: true, postId: "feed_post" });
-    const calls = (f as unknown as { mock: { calls: [string, { body: URLSearchParams }][] } }).mock.calls;
-    expect(calls.length).toBe(3);
+    const calls = (f as unknown as { mock: { calls: [string, { body?: URLSearchParams }][] } }).mock.calls;
+    // 2 photo uploads + 1 feed post + 1 permalink fetch
+    expect(calls.length).toBe(4);
     expect(calls[0]![0]).toContain("/photos");
     expect(calls[1]![0]).toContain("/photos");
     expect(calls[2]![0]).toContain("/feed");
-    expect(calls[2]![1].body.get("attached_media[0]")).toContain("photo_fbid");
+    expect(calls[2]![1].body!.get("attached_media[0]")).toContain("photo_fbid");
+    expect(calls[3]![0]).toContain("fields=permalink_url");
   });
 
   it("video (reels on, default) -> 3-phase /video_reels upload", async () => {
