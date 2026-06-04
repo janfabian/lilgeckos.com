@@ -90,6 +90,32 @@ describe("publishToTargets", () => {
     await publishToTargets(post, ["youtube", "blog"], reg);
     expect(blog.receivedCtx?.youtube).toBeUndefined();
   });
+
+  it("runs blog before the rest and threads its url to downstream platforms (e.g. reddit)", async () => {
+    const blog = new RecordingPublisher("blog", { postId: "2026-06-04-x", url: "https://lilgeckos.com/blog/2026-06-04-x" });
+    const reddit = new RecordingPublisher("reddit");
+    const twitter = new RecordingPublisher("twitter");
+    const reg = registry([
+      ["twitter", twitter],
+      ["reddit", reddit],
+      ["blog", blog],
+    ]);
+    const results = await publishToTargets(post, ["twitter", "reddit", "blog"], reg);
+    // order preserved
+    expect(results.map((r) => r.platform)).toEqual(["twitter", "reddit", "blog"]);
+    // blog ran first (before reddit + twitter)
+    expect(blog.publishedAt).toBeLessThanOrEqual(reddit.publishedAt);
+    expect(blog.publishedAt).toBeLessThanOrEqual(twitter.publishedAt);
+    // downstream platforms received ctx.blog
+    expect(reddit.receivedCtx?.blog).toEqual({
+      postId: "2026-06-04-x",
+      url: "https://lilgeckos.com/blog/2026-06-04-x",
+    });
+    expect(twitter.receivedCtx?.blog).toEqual({
+      postId: "2026-06-04-x",
+      url: "https://lilgeckos.com/blog/2026-06-04-x",
+    });
+  });
 });
 
 describe("summarize", () => {

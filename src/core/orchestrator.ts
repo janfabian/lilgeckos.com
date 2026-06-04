@@ -47,16 +47,31 @@ export async function publishToTargets(
   const results = new Array<PublishResult>(targets.length);
   let ctx: PublishContext = {};
 
+  // Phase 1 — YouTube (so the blog can embed the resulting Short).
   const ytIdx = targets.indexOf("youtube");
   if (ytIdx !== -1) {
     const yt = await publishOne("youtube", registry, post, ctx);
     results[ytIdx] = yt;
     if (yt.ok && yt.postId) {
-      ctx = { youtube: { videoId: yt.postId, url: yt.url ?? "" } };
+      ctx = { ...ctx, youtube: { videoId: yt.postId, url: yt.url ?? "" } };
     }
   }
 
-  const rest = targets.map((id, i) => ({ id, i })).filter(({ i }) => i !== ytIdx);
+  // Phase 2 — Blog (so its permalink can be threaded to platforms like Reddit
+  // that want a link post pointing at the blog page).
+  const blogIdx = targets.indexOf("blog");
+  if (blogIdx !== -1) {
+    const blog = await publishOne("blog", registry, post, ctx);
+    results[blogIdx] = blog;
+    if (blog.ok && blog.postId) {
+      ctx = { ...ctx, blog: { postId: blog.postId, url: blog.url ?? "" } };
+    }
+  }
+
+  // Phase 3 — everything else in parallel, with the full ctx.
+  const rest = targets
+    .map((id, i) => ({ id, i }))
+    .filter(({ i }) => i !== ytIdx && i !== blogIdx);
   const settled = await Promise.all(rest.map(({ id }) => publishOne(id, registry, post, ctx)));
   rest.forEach(({ i }, k) => {
     results[i] = settled[k]!;

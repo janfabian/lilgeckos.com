@@ -5,6 +5,7 @@ import {
   type FacebookCredentials,
   type InstagramCredentials,
   type YouTubeCredentials,
+  type RedditCredentials,
   type BlogConfig,
 } from "./env.js";
 
@@ -92,6 +93,24 @@ export function loadConfig(
     );
   }
 
+  let reddit: RedditCredentials | undefined;
+  if (e.REDDIT_CLIENT_ID && e.REDDIT_CLIENT_SECRET && e.REDDIT_REFRESH_TOKEN && e.REDDIT_USERNAME) {
+    reddit = {
+      clientId: e.REDDIT_CLIENT_ID,
+      clientSecret: e.REDDIT_CLIENT_SECRET,
+      refreshToken: e.REDDIT_REFRESH_TOKEN,
+      username: e.REDDIT_USERNAME,
+      // Default to the user's profile sub (always safe), override via REDDIT_SUBREDDIT.
+      subreddit: e.REDDIT_SUBREDDIT || `u_${e.REDDIT_USERNAME}`,
+    };
+  } else if (
+    e.REDDIT_CLIENT_ID || e.REDDIT_CLIENT_SECRET || e.REDDIT_REFRESH_TOKEN || e.REDDIT_USERNAME
+  ) {
+    warn(
+      "whatsapp hub: partial Reddit credentials — adapter disabled until REDDIT_CLIENT_ID, REDDIT_CLIENT_SECRET, REDDIT_REFRESH_TOKEN and REDDIT_USERNAME are all set (run `bun run auth:reddit`).",
+    );
+  }
+
   let blog: BlogConfig | undefined;
   if (e.BLOG_GITHUB_TOKEN && e.BLOG_REPO) {
     blog = {
@@ -118,6 +137,7 @@ export function loadConfig(
     facebook,
     instagram,
     youtube,
+    reddit,
     blog,
   };
 }

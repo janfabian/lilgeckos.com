@@ -1,6 +1,6 @@
 // Domain model for the broadcast hub. Platform adapters depend only on these types.
 
-export type PlatformId = "twitter" | "facebook" | "instagram" | "youtube" | "blog" | "mock";
+export type PlatformId = "twitter" | "facebook" | "instagram" | "youtube" | "blog" | "reddit" | "mock";
 
 export type MediaKind = "image" | "video";
 
@@ -51,6 +51,9 @@ export interface PostTranslation {
  */
 export interface PublishContext {
   youtube?: { videoId: string; url: string };
+  /** Set after a successful blog publish so platforms like Reddit can submit
+   *  a link post pointing to the blog permalink instead of fabricating one. */
+  blog?: { postId: string; url: string };
 }
 
 export type ErrorCode =

@@ -6,6 +6,7 @@ import { FacebookPublisher } from "../adapters/facebook.js";
 import { InstagramPublisher } from "../adapters/instagram.js";
 import { YouTubePublisher } from "../adapters/youtube.js";
 import { BlogPublisher } from "../adapters/blog.js";
+import { RedditPublisher } from "../adapters/reddit.js";
 import { MockPublisher } from "../adapters/mock.js";
 import { GitHubReleaseMediaHost } from "./media-host.js";
 
@@ -58,6 +59,9 @@ export function buildRegistry(config: AppConfig): Map<PlatformId, Publisher> {
   }
   if (config.blog) {
     registry.set("blog", new BlogPublisher(config.blog));
+  }
+  if (config.reddit) {
+    registry.set("reddit", new RedditPublisher(config.reddit));
   }
   if (config.mockEnabled) {
     registry.set("mock", new MockPublisher());

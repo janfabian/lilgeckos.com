@@ -32,6 +32,13 @@ export const envSchema = z.object({
   YOUTUBE_CLIENT_SECRET: z.preprocess(blankToUndef, z.string().optional()),
   YOUTUBE_REFRESH_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   YOUTUBE_PRIVACY: z.preprocess(blankToUndef, z.enum(['public', 'unlisted', 'private']).default('public')),
+  // Reddit (OAuth installed-app refresh-token flow). The default subreddit is
+  // the user's own profile sub (u_<username>) — safe; override via REDDIT_SUBREDDIT.
+  REDDIT_CLIENT_ID: z.preprocess(blankToUndef, z.string().optional()),
+  REDDIT_CLIENT_SECRET: z.preprocess(blankToUndef, z.string().optional()),
+  REDDIT_REFRESH_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
+  REDDIT_USERNAME: z.preprocess(blankToUndef, z.string().optional()),
+  REDDIT_SUBREDDIT: z.preprocess(blankToUndef, z.string().optional()),
   BLOG_GITHUB_TOKEN: z.preprocess(blankToUndef, z.string().optional()),
   BLOG_REPO: z.preprocess(blankToUndef, z.string().optional()),
   BLOG_BRANCH: z.preprocess(blankToUndef, z.string().default("main")),
@@ -79,8 +86,21 @@ export interface AppConfig {
   instagram?: InstagramCredentials;
   /** Present only when YouTube OAuth client id/secret/refresh token are all set. */
   youtube?: YouTubeCredentials;
+  /** Present only when Reddit client id/secret/refresh-token/username are all set. */
+  reddit?: RedditCredentials;
   /** Present only when both BLOG_GITHUB_TOKEN and BLOG_REPO are set. */
   blog?: BlogConfig;
+}
+
+export interface RedditCredentials {
+  clientId: string;
+  clientSecret: string;
+  refreshToken: string;
+  /** Reddit username (without /u/). Used for the User-Agent header and as the
+   *  default subreddit (u_<username>) when no override is set. */
+  username: string;
+  /** Target subreddit. Defaults to the user's own profile sub `u_<username>`. */
+  subreddit: string;
 }
 
 export interface YouTubeCredentials {
