@@ -191,6 +191,18 @@ const jsonLd =
         letter-spacing: 0.02em;
       }
       .masthead nav a:hover { color: var(--ink); }
+      .socials {
+        display: inline-flex;
+        gap: 4px;
+        align-items: baseline;
+        font-family: var(--font-mono);
+        font-size: 12px;
+        letter-spacing: 0.02em;
+      }
+      .socials a { color: var(--ink-soft); text-decoration: none; padding: 0 4px; }
+      .socials a + a { border-left: 1px solid var(--line); }
+      .socials a:hover { color: var(--ink); }
+      .footer-socials a + a { margin-left: 0; }
       .langswitch { display: inline-flex; gap: 6px; align-items: baseline; }
       .langswitch .cur { color: var(--ink); font-weight: 500; }
       .langswitch a { color: var(--faint); }
@@ -414,7 +426,12 @@ const jsonLd =
         <a class="wordmark" href={home}>lilgeckos<span class="dot"></span><small>.com</small></a>
         <nav>
           <a href={journal}>{t.journalNav}</a>
-          <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">@lilgeckos</a>
+          <span class="socials">
+            <a href="https://www.instagram.com/lilgeckos_com/" target="_blank" rel="noopener noreferrer" aria-label="Instagram" title="Instagram">IG</a>
+            <a href="https://www.youtube.com/@lilgeckos" target="_blank" rel="noopener noreferrer" aria-label="YouTube" title="YouTube">YT</a>
+            <a href="https://www.facebook.com/122097145983351292" target="_blank" rel="noopener noreferrer" aria-label="Facebook" title="Facebook">FB</a>
+            <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer" aria-label="X" title="X (@lilgeckos)">X</a>
+          </span>
           {switchHref && (
             <span class="langswitch">
               <span class="cur">{lang.toUpperCase()}</span>
@@ -429,8 +446,13 @@ const jsonLd =
         <span>
           <a href={journal}>{t.journalNav}</a> ·
           <a href={`${base}/privacy`}>Privacy</a> ·
-          <a href={`${base}/terms`}>Terms</a> ·
-          <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">x.com/lilgeckos</a>
+          <a href={`${base}/terms`}>Terms</a>
+        </span>
+        <span class="footer-socials">
+          <a href="https://www.instagram.com/lilgeckos_com/" target="_blank" rel="noopener noreferrer">Instagram</a> ·
+          <a href="https://www.youtube.com/@lilgeckos" target="_blank" rel="noopener noreferrer">YouTube</a> ·
+          <a href="https://www.facebook.com/122097145983351292" target="_blank" rel="noopener noreferrer">Facebook</a> ·
+          <a href="https://x.com/lilgeckos" target="_blank" rel="noopener noreferrer">X</a>
         </span>
       </footer>
     </div>
