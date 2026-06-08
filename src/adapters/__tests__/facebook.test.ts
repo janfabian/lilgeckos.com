@@ -155,6 +155,104 @@ describe("FacebookPublisher.publish", () => {
   });
 });
 
+describe("FacebookPublisher misleading-error recovery", () => {
+  it("recovers from 'reduce the amount of data' by finding the matching recent post", async () => {
+    const matching = {
+      id: "1199764649879474_999",
+      permalink_url: "https://www.facebook.com/ACTOR/posts/999",
+      message: "Just a routine skin refresh. Nothing to see here.\n\nMid-shed",
+    };
+    const f = vi.fn(async (url: string, init?: { method?: string }) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/PAGE/photos") && method === "POST")
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({
+            error: { message: "Please reduce the amount of data you're asking for, then retry your request", code: 1 },
+          }),
+        };
+      if (url.includes("/PAGE/posts?fields="))
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            data: [
+              {
+                id: matching.id,
+                message: matching.message,
+                created_time: new Date().toISOString(),
+                permalink_url: matching.permalink_url,
+              },
+            ],
+          }),
+        };
+      return { ok: true, status: 200, json: async () => ({}) };
+    }) as unknown as FetchLike;
+    const res = await new FacebookPublisher(creds, {
+      fetchImpl: f,
+      mediaMaxBytes: 1_000_000,
+      videoMaxBytes: 5_000_000,
+    }).publish({
+      text: "Just a routine skin refresh. Nothing to see here.\n\nMid-shed and pretending it's just spa day.",
+      media: [{ path: imgA, kind: "image" }],
+    });
+    expect(res).toMatchObject({ ok: true, postId: "1199764649879474_999" });
+    expect(res.url).toBe("https://www.facebook.com/ACTOR/posts/999");
+  });
+
+  it("still reports failure when 'reduce' fires but no matching post is found", async () => {
+    const f = vi.fn(async (url: string, init?: { method?: string }) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/PAGE/photos") && method === "POST")
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({
+            error: { message: "Please reduce the amount of data you're asking for, then retry your request", code: 1 },
+          }),
+        };
+      if (url.includes("/PAGE/posts?fields="))
+        return { ok: true, status: 200, json: async () => ({ data: [] }) };
+      return { ok: true, status: 200, json: async () => ({}) };
+    }) as unknown as FetchLike;
+    const res = await new FacebookPublisher(creds, {
+      fetchImpl: f,
+      mediaMaxBytes: 1_000_000,
+      videoMaxBytes: 5_000_000,
+    }).publish({ text: "nothing will match", media: [{ path: imgA, kind: "image" }] });
+    expect(res.ok).toBe(false);
+  });
+
+  it("ignores a recent post older than the 90s window", async () => {
+    const stale = new Date(Date.now() - 5 * 60_000).toISOString(); // 5 min ago
+    const f = vi.fn(async (url: string, init?: { method?: string }) => {
+      const method = init?.method ?? "GET";
+      if (url.includes("/PAGE/photos") && method === "POST")
+        return {
+          ok: false,
+          status: 500,
+          json: async () => ({
+            error: { message: "Please reduce the amount of data you're asking for", code: 1 },
+          }),
+        };
+      if (url.includes("/PAGE/posts?fields="))
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({ data: [{ id: "x", message: "Just a routine", created_time: stale, permalink_url: "u" }] }),
+        };
+      return { ok: true, status: 200, json: async () => ({}) };
+    }) as unknown as FetchLike;
+    const res = await new FacebookPublisher(creds, {
+      fetchImpl: f,
+      mediaMaxBytes: 1_000_000,
+      videoMaxBytes: 5_000_000,
+    }).publish({ text: "Just a routine skin refresh", media: [{ path: imgA, kind: "image" }] });
+    expect(res.ok).toBe(false);
+  });
+});
+
 describe("FacebookPublisher.checkStatus", () => {
   it("healthy with page name", async () => {
     const res = await adapter(okFetch()).checkStatus();

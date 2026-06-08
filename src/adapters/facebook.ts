@@ -139,6 +139,23 @@ export class FacebookPublisher implements Publisher {
       const res = await this.graph(`${this.pageId}/feed`, body);
       return ok(String(res.id));
     } catch (err) {
+      // FB sometimes returns "Please reduce the amount of data you're asking for"
+      // even when the post actually went through (misleading backend error).
+      // Verify before reporting failure — if a matching post landed on the Page
+      // in the last ~90s, recover it instead of letting the caller retry and dup.
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (/reduce the amount of data/i.test(errMsg)) {
+        const recovered = await this.verifyRecentPost(post.text);
+        if (recovered) {
+          return {
+            platform: this.platform,
+            ok: true,
+            postId: recovered.id,
+            url: recovered.url,
+            durationMs: Date.now() - start,
+          };
+        }
+      }
       const { errorCode, message } = mapFbError(err);
       return fail(errorCode, message);
     }
@@ -209,6 +226,43 @@ export class FacebookPublisher implements Publisher {
       this.params({ upload_phase: "finish", video_id: videoId, video_state: "PUBLISHED", description }),
     );
     return videoId;
+  }
+
+  /** Idempotency check: if a misleading "reduce the amount of data" error fires
+   *  while the post actually went through, find that fresh post by matching the
+   *  message prefix + a 90s recency window, so the caller doesn't retry and dup. */
+  private async verifyRecentPost(text: string): Promise<{ id: string; url: string } | null> {
+    const prefix = (text ?? "").trim().slice(0, 40);
+    if (!prefix) return null;
+    try {
+      const res = await this.graph(
+        `${this.pageId}/posts?fields=id,message,created_time,permalink_url&limit=5&access_token=${encodeURIComponent(this.token)}`,
+        undefined,
+        "GET",
+      );
+      const data = Array.isArray((res as Record<string, unknown>).data)
+        ? ((res as Record<string, unknown>).data as Array<Record<string, unknown>>)
+        : [];
+      const since = Date.now() - 90_000;
+      for (const p of data) {
+        const ctStr = typeof p.created_time === "string" ? p.created_time : "";
+        const ct = ctStr ? new Date(ctStr).getTime() : NaN;
+        if (!Number.isFinite(ct) || ct < since) continue;
+        const message = typeof p.message === "string" ? p.message.trim() : "";
+        if (message && message.startsWith(prefix)) {
+          return {
+            id: String(p.id),
+            url:
+              typeof p.permalink_url === "string"
+                ? p.permalink_url
+                : `https://www.facebook.com/${String(p.id)}`,
+          };
+        }
+      }
+    } catch {
+      /* best-effort */
+    }
+    return null;
   }
 
   /** Best-effort lookup of a post's canonical share URL via Graph (`permalink_url`).
