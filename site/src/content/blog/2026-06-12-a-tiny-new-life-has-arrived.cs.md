@@ -10,6 +10,6 @@ translationKey: "2026-06-12-a-tiny-new-life-has-arrived"
 
 Na svět přišel nový malý život! 🦎💚 Vítej, gekonku. Máme velkou radost, že jsi tady s námi. ✨
 
-A další dvě vajíčka ještě čekají, až na ně přijde řada.
+A další vajíčko ještě čeká, až na něj přijde řada.
 
 #leopardgecko #gekon #vylíhnutí #geckosofinstagram
