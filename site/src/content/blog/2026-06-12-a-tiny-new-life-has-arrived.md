@@ -10,6 +10,6 @@ translationKey: "2026-06-12-a-tiny-new-life-has-arrived"
 
 A tiny new life has arrived! 🦎💚 Welcome to the world, little gecko. We're so happy you're here with us. ✨
 
-And two more eggs still waiting their turn.
+And one more egg still waiting its turn.
 
 #leopardgecko #babygecko #hatchling #newhatchling #roidaily #geckosofinstagram #reptilesofinstagram
