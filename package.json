@@ -17,6 +17,7 @@
     "auth:reddit": "tsx scripts/reddit-auth.ts",
     "youtube:refresh": "tsx scripts/youtube-auth.ts && bash scripts/restart-hub.sh",
     "hub:restart": "bash scripts/restart-hub.sh",
+    "stats": "tsx scripts/stats.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest"

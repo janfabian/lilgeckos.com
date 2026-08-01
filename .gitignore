@@ -9,5 +9,8 @@ site/.astro/
 *.log
 .DS_Store
 coverage/
+# Published-posts log (written by the hub, read by `bun run stats`) — local state.
+data/
 # Local Claude Code settings (permission rules etc.) — keep out of the public repo.
 .claude/
+.gstack/

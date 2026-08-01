@@ -5,6 +5,7 @@ import type { Publisher } from "../core/publisher.js";
 import type { PlatformId } from "../core/types.js";
 import { publishToTargets, summarize } from "../core/orchestrator.js";
 import { enabledPlatforms } from "../core/registry.js";
+import { appendRecords, recordsFromResults } from "../core/post-log.js";
 
 const platformEnum = z.enum(["twitter", "facebook", "instagram", "youtube", "blog", "mock"]);
 
@@ -48,6 +49,16 @@ export function publishRoute(registry: Map<PlatformId, Publisher>): Hono {
 
     const requested = targets && targets.length > 0 ? targets : enabled;
     const results = await publishToTargets(post, requested, registry);
+
+    // Record successful posts so `bun run stats` can fetch metrics later.
+    // Best-effort: never let logging break the publish response.
+    try {
+      const title = post.title?.trim() || post.text.split(/\r?\n/).find((l) => l.trim())?.trim();
+      appendRecords(recordsFromResults(results, { title, ts: new Date().toISOString() }));
+    } catch {
+      /* ignore */
+    }
+
     return c.json({ results, summary: summarize(results) });
   });
   return app;
