@@ -62,6 +62,19 @@ describe("formatReport", () => {
     expect(out).toContain("BLOG — 1 post(s), no analytics API");
   });
 
+  it("sorts newest-first with sort: date", () => {
+    const recs: PostRecord[] = [
+      { ts: "2026-07-01T00:00:00Z", platform: "youtube", postId: "y1", title: "Older" },
+      { ts: "2026-07-20T00:00:00Z", platform: "youtube", postId: "y2", title: "Newer" },
+    ];
+    const m = new Map<PlatformId, MetricsByPostId>([
+      ["youtube", new Map([["y1", { views: 999 }], ["y2", { views: 1 }]])],
+    ]);
+    const out = formatReport(recs, m, { sort: "date" });
+    // Newer post listed first despite far fewer views.
+    expect(out.indexOf("Newer")).toBeLessThan(out.indexOf("Older"));
+  });
+
   it("surfaces a per-platform error instead of numbers", () => {
     const out = formatReport(records, new Map(), {
       errors: new Map<PlatformId, string>([["youtube", "rate limited"]]),

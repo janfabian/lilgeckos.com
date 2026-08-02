@@ -5,6 +5,7 @@
  * Usage:
  *   bun run stats                 # all logged posts
  *   bun run stats --since 7d      # only posts from the last 7 days (also: 30d, 12h, ISO date)
+ *   bun run stats --sort date     # order each platform newest-first (default: by views)
  *   bun run stats --json          # machine-readable dump instead of the text report
  *
  * Reads post ids from data/published.jsonl (written by the hub on each publish;
@@ -88,9 +89,10 @@ async function main(): Promise<void> {
     return;
   }
 
+  const sort = arg("--sort") === "date" ? "date" : "views";
   const span = cutoff ? `since ${new Date(cutoff).toISOString().slice(0, 10)}` : "all time";
-  console.log(`lilgeckos hub — post stats (${span}, ${records.length} posts)`);
-  console.log(formatReport(records, metricsByPlatform, { errors }));
+  console.log(`lilgeckos hub — post stats (${span}, ${records.length} posts, sorted by ${sort})`);
+  console.log(formatReport(records, metricsByPlatform, { errors, sort }));
 }
 
 main().catch((e) => {

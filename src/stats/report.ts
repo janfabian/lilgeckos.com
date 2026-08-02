@@ -61,8 +61,9 @@ function sum(rows: StatRow[], key: keyof PostMetrics): number | undefined {
 export function formatReport(
   records: PostRecord[],
   metricsByPlatform: Map<PlatformId, MetricsByPostId>,
-  opts: { errors?: Map<PlatformId, string> } = {},
+  opts: { errors?: Map<PlatformId, string>; sort?: "views" | "date" } = {},
 ): string {
+  const sortMode = opts.sort ?? "views";
   const byPlatform = new Map<PlatformId, PostRecord[]>();
   for (const r of records) {
     const arr = byPlatform.get(r.platform) ?? [];
@@ -94,7 +95,11 @@ export function formatReport(
     }
 
     if (!NO_METRICS_PLATFORMS.has(platform) && !err) {
-      rows.sort((a, b) => (b.metrics.views ?? -1) - (a.metrics.views ?? -1));
+      if (sortMode === "date") {
+        rows.sort((a, b) => Date.parse(b.record.ts) - Date.parse(a.record.ts));
+      } else {
+        rows.sort((a, b) => (b.metrics.views ?? -1) - (a.metrics.views ?? -1));
+      }
       for (const { record, metrics: m } of rows) {
         const label = record.title ?? record.postId;
         lines.push(

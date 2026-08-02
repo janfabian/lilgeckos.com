@@ -1,5 +1,13 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, beforeAll } from "vitest";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 import { buildServer } from "../../server.js";
+
+// Keep the route's post-logging out of the real data/published.jsonl —
+// without this, every test run appends mock records to the live stats log.
+beforeAll(() => {
+  process.env.POST_LOG_PATH = join(tmpdir(), `publish-test-log-${process.pid}.jsonl`);
+});
 import { MockPublisher } from "../../adapters/mock.js";
 import type { Publisher } from "../../core/publisher.js";
 import type { PlatformId } from "../../core/types.js";
